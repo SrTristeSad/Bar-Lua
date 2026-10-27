@@ -1,0 +1,64 @@
+{
+  "apk_version": "1.0.1811",
+  "sha256_libcocos2dcpp": "8199604d199b57ebe329725c9a624b85517f495f78c1dad745449684750e4677",
+  "verification": "instruction patterns matched and PT_LOAD constants decoded; static evidence only",
+  "constants": {
+    "speed_divisor": 100.0,
+    "radian_divisor": 3.1415927410125732,
+    "degrees_multiplier": 180.0
+  },
+  "fields": {
+    "hero_speed": "0x328",
+    "hero_secondary_speed": "0xd8",
+    "hero_facing": "0xdc",
+    "hero_stick_dir": "0x324",
+    "message_sequence": "0x28",
+    "message_direction": "0x2c"
+  },
+  "observations": [
+    "updateStick contains discrete 90/180/270 degree weighted arithmetic and a division by sum",
+    "updateStick uses a special direction -1, 0->89, 180->44 and divides other angles in four-degree units",
+    "new move message is sent if resulting code differs from last global code",
+    "message direction stored at +0x2c, sequence at +0x28; BattleNet sequence advances by two",
+    "move_update computes sum of two vector components using cosDeg/sinDeg and speed fields divided by 100",
+    "Entity::move invoked with computed components; downstream integration and collisions unknown"
+  ],
+  "limitations": [
+    "four direction slots not semantically named",
+    "no full packet schema, transport or server reproduced",
+    "no verified physics/collisions, acceleration, or frame-rate interpretation",
+    "floating point rounding may differ between Lua doubles and ARM64 floats"
+  ],
+  "functions": [
+    {
+      "signature": "GameScene::updateStick()",
+      "address": "0xeb7358",
+      "size_bytes": 420,
+      "patterns_verified": 11
+    },
+    {
+      "signature": "Hero::move_update(float)",
+      "address": "0xe585a8",
+      "size_bytes": 240,
+      "patterns_verified": 7
+    },
+    {
+      "signature": "Hero::getMoveDirection()",
+      "address": "0xe584f8",
+      "size_bytes": 152,
+      "patterns_verified": 3
+    },
+    {
+      "signature": "Hero::setStickDir(int)",
+      "address": "0xe5983c",
+      "size_bytes": 8,
+      "patterns_verified": 1
+    },
+    {
+      "signature": "Hero::setSpeed(int)",
+      "address": "0xe59844",
+      "size_bytes": 8,
+      "patterns_verified": 1
+    }
+  ]
+}
