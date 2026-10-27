@@ -2,13 +2,33 @@
 -- F9: resolve subtexturas .bplist e compõe hierarquia/ancoras/z para desenho.
 local layout = require('src.scene_layout')
 local geometry = require('src.sprite_geometry')
+local sceneLinks = require('src.scene_links')
 local M = {nodeIndex=1,showGuides=true,showHidden=false,showText=true}
-local current,nodes,viewport=nil,{},nil
-local function ensure(scene)
-    if current == scene then return end
-    current, nodes, M.nodeIndex, viewport = scene, layout.flatten(scene), 1, nil
+local baseScene,current,nodes,viewport=nil,nil,{},nil
+local trail,skinStates={},{}
+local catalog={}
+local MAX_TRAIL=16
+local function changeScene(scene, nodeIndex)
+    current,nodes,viewport=scene,layout.flatten(scene),nil
+    M.nodeIndex=math.max(1,math.min(#nodes,nodeIndex or 1))
 end
-function M.reset() current,nodes,M.nodeIndex,viewport=nil,{},1,nil end
+local function ensure(scene)
+    if baseScene == scene then return end
+    baseScene=scene
+    trail,skinStates={},{}
+    changeScene(scene,1)
+end
+function M.reset()
+    baseScene,current,nodes,viewport=nil,nil,{},nil
+    trail,skinStates={},{}
+    M.nodeIndex=1
+end
+function M.setCatalog(scenes)
+    catalog=sceneLinks.build(scenes)
+    M.reset()
+end
+function M.active(scene) ensure(scene); return current end
+function M.depth(scene) ensure(scene);return #trail end
 function M.next(scene, direction)
     ensure(scene)
     M.nodeIndex=math.max(1,math.min(#nodes,M.nodeIndex+direction))
@@ -21,6 +41,50 @@ function M.inspect(scene)
         entry.x,entry.y=x,y
     end
     return entry,#nodes
+end
+function M.openReference(scene)
+    ensure(scene)
+    local entry=nodes[M.nodeIndex]
+    local reference=entry and entry.node and entry.node.project_file
+    if not reference then return false,'Nó sem subcena referenciada' end
+    local target,reason=sceneLinks.find(catalog,reference)
+    if not target then return false,reason end
+    if #trail>=MAX_TRAIL then return false,'Limite de profundidade para inspeção' end
+    for _,item in ipairs(trail) do
+        if item.scene==target then return false,'Referência circular' end
+    end
+    if current==target then return false,'Referência circular' end
+    trail[#trail+1]={scene=current,index=M.nodeIndex}
+    changeScene(target,1)
+    return true
+end
+function M.back(scene)
+    ensure(scene)
+    local previous=trail[#trail]
+    if not previous then return false end
+    trail[#trail]=nil
+    changeScene(previous.scene,previous.index)
+    return true
+end
+local cycle={'normal','pressed','disabled'}
+function M.cycleButton(scene)
+    ensure(scene)
+    local entry=nodes[M.nodeIndex]
+    if not entry or entry.node.class~='Button' then return false end
+    local available=entry.node.button_states or {}
+    local present={}
+    for _,key in ipairs(cycle) do if available[key] then present[#present+1]=key end end
+    if #present<2 then return false end
+    local previous=skinStates[entry.node] or 'normal'
+    local at=1
+    for i,value in ipairs(present) do if value==previous then at=i end end
+    skinStates[entry.node]=present[at % #present+1]
+    return true,skinStates[entry.node]
+end
+function M.currentButtonState(scene)
+    ensure(scene)
+    local entry=nodes[M.nodeIndex]
+    return entry and skinStates[entry.node] or 'normal'
 end
 function M.toggleGuides() M.showGuides=not M.showGuides end
 function M.toggleHidden() M.showHidden=not M.showHidden end
@@ -66,6 +130,7 @@ local function drawResource(g,r, w,h)
 end
 function M.draw(scene,ctx)
     ensure(scene)
+    scene=current
     local g,x,y,w,h=love.graphics,ctx.x,ctx.y,ctx.w,ctx.h
     ctx.background(x,y,w,h,{0.11,0.15,0.19})
     if #nodes==0 then ctx.put('Cena sem nós recuperados.',x+20,y+20);return end
@@ -101,6 +166,10 @@ function M.draw(scene,ctx)
         g.translate(-val(p,'anchor',1,0.5)*rw,-val(p,'anchor',2,0.5)*rh)
         if entry.visible or M.showHidden then
             local resource = node.resource
+            if node.class=='Button' and node.button_states then
+                local state = skinStates[node] or 'normal'
+                resource = node.button_states[state] or node.button_states.normal or resource
+            end
             if resource and maxImages>0 then
                 local resolved
                 if ctx.resolveResource then
@@ -156,7 +225,7 @@ function M.draw(scene,ctx)
     local selected=nodes[M.nodeIndex] or nodes[1]
     local n,p=selected.node,selected.node.props or {}
     local wx,wy=layout.transform(selected.world,0,0)
-    ctx.put(trunc(scene.name or scene.path,66)..' | '..#nodes..' nós | '..sw..'×'..sh..' | imagens exibidas: '..totalImages,
+    ctx.put(trunc(scene.name or scene.path,48)..' | '..#nodes..' nós | '..sw..'×'..sh..' | imagens: '..totalImages..' | subcenas: '..#trail,
         x+10,y+10,{0.96,0.98,1},ctx.small)
     ctx.background(x+8,y+h-105,w-16,100,{0.08,0.12,0.16})
     ctx.put(M.nodeIndex..'/'..#nodes..' '..string.rep('· ',math.min(8,selected.depth))..
@@ -165,10 +234,19 @@ function M.draw(scene,ctx)
         wx,wy,selected.w,selected.h,tostring(p.z or 0),tostring(selected.visible)),
         x+16,y+h-77,{0.84,0.9,0.96},ctx.small)
     local res=n.resource
-    if res then ctx.put('Imagem: '..trunc(res.path,82),x+16,y+h-56,{0.82,0.86,0.93},ctx.small)
+    local activeSkin=skinStates[n] or 'normal'
+    if n.class=='Button' and n.button_states then
+        res=n.button_states[activeSkin] or n.button_states.normal or res
+    end
+    if n.project_file then
+        ctx.put('ProjectNode → '..trunc(n.project_file,81),x+16,y+h-56,{0.82,0.86,0.93},ctx.small)
+    elseif n.class=='Button' then
+        ctx.put('Botão ['..activeSkin..'] | touch='..tostring(p.touch)..' | imagem='..trunc(res and res.path or '-',57),
+            x+16,y+h-56,{0.82,0.86,0.93},ctx.small)
+    elseif res then ctx.put('Imagem: '..trunc(res.path,82),x+16,y+h-56,{0.82,0.86,0.93},ctx.small)
     elseif n.text then ctx.put('Texto: '..trunc(n.text,82),x+16,y+h-56,{0.82,0.86,0.93},ctx.small)
     else ctx.put('Tag: '..tostring(p.action_tag or 0)..' | referência: '..tostring(p.callback or ''),x+16,y+h-56,{0.72,0.78,0.86},ctx.small) end
-    ctx.put('Clique: selecionar | Tab/Shift+Tab: nós | G: guias | V: ocultos | T: texto de referência',
+    ctx.put('Clique: selecionar | Tab: nós | Enter: subcena | Backspace: voltar | H: estado botão | G/V/T',
         x+16,y+h-27,{0.86,0.91,0.96},ctx.small)
 end
 return M
