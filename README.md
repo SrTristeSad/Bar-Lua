@@ -2,7 +2,7 @@
 
 **Objetivo:** estudar um APK original do BarbarQ e reproduzir sua experiência no PC com **Lua e LÖVE2D**, sem emulador Android. Isto **não** é um jogo inspirado no BarbarQ. Os recursos recuperados servem de referência, mas portar a lógica original exige engenharia reversa adicional.
 
-## Estado atual — Fase 6: seleção de sprites e ordem de camadas
+## Estado atual — Fase 7: recortes, eixo Y e inspeção de pivôs
 
 O projeto ainda é **um laboratório de visualização; não é uma versão jogável**.
 
@@ -18,7 +18,16 @@ O projeto ainda é **um laboratório de visualização; não é uma versão jog�
 - **Correção do leitor:** a antiga hipótese de usar `frame[11]` como `display_index` continua descartada. A Fase 6 confirma o verdadeiro índice em `frame[0]` e usa `bone[2]` como display inicial.
 - **F1/F2/F3/F4:** painéis de mapa, imagens, atlas e configurações preservados.
 
-**Limites da prévia F6:** os cálculos de pose-base + deltas e a decomposição de skew são **hipóteses de reconstrução**. A interpolação atual é linear e não replica easing Cocos; os assets analisados não expuseram nenhum `parent` textual não vazio para os ossos, então composição de pais está implementada e testada artificialmente, **mas não validada num esqueleto real do APK**. Ainda faltam: cor/blending, quadros rotacionados nos atlas, pivôs de displays, easing, temporização original e reconciliação com captura do BarbarQ original. A prioridade atual de atlas e a ordem das camadas precisam ser confrontadas visualmente com o jogo para confirmar o resultado. São usados 30 quadros/s **apenas para investigação**. Não apresentar o resultado como fiel 1:1 até comparação real.
+### Fase 7: geometria, recortes e guias
+
+- **Inversão vertical correta:** imagens físicas dos atlas usam Y para baixo; a composição de osso do Cocos usa Y para cima. O renderizador em Lua agora converte a orientação da textura sem inverter o personagem.
+- **Trim e offsets:** as coordenadas do recorte e os deslocamentos relativos ao tamanho original são considerados em F3 e F5, preservando o centro do canvas como hipótese de pivô (0,5 × 0,5).
+- **F3:** uma caixa amarela mostra o tamanho da imagem original e a verde mostra o recorte visível.
+- **F5:** pressione `P` para ativar guias de posição e origem. A interpolação linear agora usa o tempo fracionário em vez de truncá-lo antes do cálculo.
+- **Rotação:** o código prevê frames marcados `rotated=true`, mas a coleção original 1.0.1811 possui **0/13.875** frames rotacionados. Este caminho é experimental, não validado no jogo.
+- **Atlas originais auditados:** dos 13.875 sprites, 9.181 têm dimensões recortadas e 9.108 têm offsets; todas as caixas cabem dentro da origem indicada pelos metadados.
+
+**Limites da prévia F7:** os cálculos de pose-base + deltas e a decomposição de skew são **hipóteses de reconstrução**. A interpolação atual é linear e não replica easing Cocos; os assets analisados não expuseram nenhum `parent` textual não vazio para os ossos, então composição de pais está implementada e testada artificialmente, **mas não validada num esqueleto real do APK**. Ainda faltam: cor/blending, validação da âncora/pivô de displays, easing, temporização original e reconciliação com captura do BarbarQ original. A prioridade atual de atlas e a ordem das camadas precisam ser confrontadas visualmente com o jogo para confirmar o resultado. São usados 30 quadros/s **apenas para investigação**. Não apresentar o resultado como fiel 1:1 até comparação real.
 
 **Não implementados:** controles de jogador, colisões, combate, IA, itens, menus operacionais, progressão, lobby e partidas online/offline. Ainda será necessária investigação do executável nativo e testes comparativos para uma portabilidade 1:1.
 
@@ -48,6 +57,7 @@ Os ZIPs de teste **com recursos** já incluem `assets_original/` e `cache/`, ent
 | `Tab` / `Shift+Tab` | Trocar de movimento F5 |
 | `I` | Alternar interpolação linear e quadros discretos F5 |
 | `B` | Alternar inclusão da pose-base F5 |
+| `P` | Guias de origem, canvas completo e recorte F5 |
 
 ## Estrutura
 
@@ -60,6 +70,7 @@ Os ZIPs de teste **com recursos** já incluem `assets_original/` e `cache/`, ent
 | `src/animation_view.lua` | Visualizador F5 de poses, seleção de displays e sobreposição |
 | `src/sprite_resolver.lua` | Resolução contextual de nomes de sprites e prevenção de colisões |
 | `src/pose.lua` | Interpolação e matrizes afins, sem dependência gráfica |
+| `src/sprite_geometry.lua` | Renderização de recorte e conversão do eixo vertical, com testes Lua |
 | `tests/test_pose.lua` | Testes Lua de poses, transições discretas de display e ordem de camadas |
 | `tests/test_sprite_resolver.lua` | Teste Lua de atlas explícitos, locais, globais e colisões |
 | `main.lua`, `conf.lua` | Interface LÖVE2D |
@@ -67,18 +78,18 @@ Os ZIPs de teste **com recursos** já incluem `assets_original/` e `cache/`, ent
 | `assets_original/` | Recursos locais do APK; **ignorado pelo Git** |
 | `cache/` | Dados locais gerados; **ignorado pelo Git** |
 
-## Auditoria da Fase 6
+## Auditoria da Fase 7
 
 ```powershell
 py -m unittest discover -s tests -v
 py tools/preparar_recursos.py --assets assets_original --out cache
 ```
 
-Os **13 testes Python passaram**, incluindo os executores Lua (`tests/test_pose.lua`, `tests/test_sprite_resolver.lua`) com Lua 5.3 via `luatex --luaonly`. Os **1.079 arquivos binários foram novamente decodificados sem falhas**, inclusive todas as 38.727 poses-chave. Há 18 keyframes que ocultam a imagem com display `-1`. O cache local completo foi regenerado a partir do APK. Sintaxe Lua dos módulos conferida. **Ainda não houve teste visual no LÖVE2D/Windows neste ambiente**; nenhuma fidelidade visual está certificada.
+Os **15 testes Python passaram**, incluindo os executores Lua (`tests/test_pose.lua`, `tests/test_sprite_resolver.lua`) com Lua 5.3 via `luatex --luaonly`. Os **1.079 arquivos binários foram novamente decodificados sem falhas**, inclusive todas as 38.727 poses-chave. Há 18 keyframes que ocultam a imagem com display `-1`. O cache local completo foi regenerado a partir do APK. Sintaxe Lua dos módulos conferida. **Ainda não houve teste visual no LÖVE2D/Windows neste ambiente**; nenhuma fidelidade visual está certificada.
 
 ## Próximas frentes
 
-1. Validar no LÖVE2D, contra vídeo/capturas do jogo original, a seleção de imagens/ordem numérica de camadas; implementar pivôs, atlas rotacionados, curvas de easing, cor e taxa de reprodução.
+1. Comparar a Fase 7 no LÖVE2D para Windows com capturas reais do BarbarQ e investigar pivôs, curvas de easing, cor e taxa de reprodução.
 2. Decodificar cenas `.csb`, modelos `.c3b` e informações de configuração pertinentes à jogabilidade.
 3. Reconstruir a movimentação, entidades, física e combate com testes de referência 1:1.
 4. Investigar e, se viável, substituir serviços de rede por uma infraestrutura independente.
