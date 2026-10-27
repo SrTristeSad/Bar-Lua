@@ -1,14 +1,11 @@
 -- Laboratório visual de keyframes Cocos Studio, não renderizador definitivo.
--- Coordenadas, escala e indexação foram recuperadas do APK. Hierarquia,
--- tweening, skew, orientações especiais e blending aguardam validação.
+-- Índices de display foram validados no APK. Camadas são ordenadas por
+-- bone[5]; pivôs, easing e blending ainda aguardam validação visual.
 local pose = require("src.pose")
+local spriteResolver = require("src.sprite_resolver")
 local M = {movement = 1, time = 0, running = true, interpolate = true, useBind = true}
 local spriteLookup
 local lastAnimation
-
-local function dirname(path)
-    return path:match("^(.*)/[^/]+$") or ""
-end
 
 local function findMovements(asset)
     if not asset or not asset.animations then return {} end
@@ -68,24 +65,6 @@ function M.changeMovement(asset, delta)
     M.time = 0
 end
 
-local function indexAtlases(atlases)
-    local lookup = {}
-    -- Entrada específica do diretório tem prioridade. Nomes globais só são
-    -- usados quando não há colisão, evitando associações arbitrárias.
-    local glob, ambiguous = {}, {}
-    for _, atlas in ipairs(atlases) do
-        local folder = dirname(atlas.path)
-        for _, f in ipairs(atlas.frames) do
-            local key = folder .. "/" .. f.name
-            lookup[key] = {atlas = atlas, frame = f}
-            if glob[f.name] then ambiguous[f.name] = true
-            else glob[f.name] = {atlas = atlas, frame = f} end
-        end
-    end
-    for name in pairs(ambiguous) do glob[name] = nil end
-    return lookup, glob
-end
-
 local function spriteBox(matrix, f)
     -- Bounding box calculada com a transformação afim, incluindo skew.
     local ox, oy = f.offset_x or 0, f.offset_y or 0
@@ -121,28 +100,26 @@ function M.draw(asset, atlases, ctx)
     put(string.format("Quadro %d / %d  •  %d trilhas  •  %s", frameIndex, duration,
         ntracks, M.running and "reproduzindo" or "pausado"),
         x + 12, y + 61, {0.78, 0.88, 0.96}, ctx.small)
-    put(string.format("Prévia: %s  |  base: %s  |  troca de display ainda não interpretada",
+    put(string.format("Prévia: %s  |  base: %s  |  displays por keyframe e camadas ativas",
         M.interpolate and "interpolada" or "discreta", M.useBind and "ligada" or "desligada"),
         x + 12, y + h - 105, {1, 0.73, 0.49}, ctx.small)
 
-    if not spriteLookup then
-        local global
-        spriteLookup, global = indexAtlases(atlases)
-        M.global = global
-    end
-    local folder = dirname(asset.path)
+    if not spriteLookup then spriteLookup = spriteResolver.index(atlases) end
     local poses = {}
-    local missing = 0
+    local missing, hidden = 0, 0
     -- Os nomes das armaduras observadas no APK podem divergir de nomes
     -- de animações; a seleção da primeira armadura continua provisória.
     local armature = asset.armatures and asset.armatures[1]
-    local nodes = pose.evaluate(armature, movement, frameIndex, M.interpolate, M.useBind)
+    local nodes = pose.ordered(pose.evaluate(armature, movement, frameIndex,
+        M.interpolate, M.useBind))
     for _, node in ipairs(nodes) do
-        local name = node.bone.displays and node.bone.displays[1]
-        -- Só renderizamos o primeiro display: o campo binário que identifica
-        -- mudanças de display ainda não foi mapeado com segurança.
-        local sprite = name and (spriteLookup[folder .. "/" .. name] or M.global[name])
-        if sprite and not sprite.frame.rotated then
+        local display = node.display_index
+        local name = display and display >= 0 and node.bone.displays and
+            node.bone.displays[display + 1]
+        local sprite = name and spriteResolver.find(spriteLookup, asset, name)
+        if display == -1 then
+            hidden = hidden + 1
+        elseif sprite and not sprite.frame.rotated then
             local image = ctx.imageFor(sprite.atlas.image)
             if image then
                 local quad = ctx.spriteQuad(sprite.atlas, sprite.frame, image)
@@ -185,7 +162,8 @@ function M.draw(asset, atlases, ctx)
         end
         love.graphics.setScissor()
     end
-    put(string.format("Componentes com sprite: %d/%d  |  não resolvidos: %d", #poses, ntracks, missing),
+    put(string.format("Sprites: %d/%d ossos  |  ocultos: %d  |  não resolvidos: %d",
+        #poses, #nodes, hidden, missing),
         x + 12, y + h - 124, {0.78, 0.87, 0.94}, ctx.small)
     local barx, bary, barw = x + 15, y + h - 74, math.max(1, w - 30)
     background(barx, bary, barw, 13, {0.28, 0.35, 0.41})
