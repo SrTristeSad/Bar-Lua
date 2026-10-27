@@ -2,9 +2,26 @@
 
 **Objetivo:** estudar um APK original do BarbarQ e reproduzir sua experiência no PC com **Lua e LÖVE2D**, sem emulador Android. Isto **não** é um jogo inspirado no BarbarQ. Os recursos recuperados servem de referência, mas portar a lógica original exige engenharia reversa adicional.
 
-## Estado atual — Fase 10: subcenas e estados reais de botões
+## Estado atual — Fase 11: auditoria ELF ARM64
 
 O projeto ainda é **um laboratório de visualização; não é uma versão jogável**.
+
+### Novidades da Fase 11
+
+- **Análise estática comprovada:** o APK 1.0.1811 contém cinco bibliotecas ARM64, incluindo `libcocos2dcpp.so` (aprox. 38,1 MiB). A biblioteca está marcada como stripped, mas preserva **83.660 entradas na tabela dinâmica .dynsym** (83.658 com nomes interpretáveis).
+- Foram catalogados **586 métodos exportados** em 12 classes de interesse: `GameScene`, `BattleNet`, `BattleManager`, `BattleFieldController`, `GameLayer`, `Hero`, `CSkill`, `CSkillEntity`, `CMoveEdge`, `ViewMoveEdge`, `BattleDataManager` e `UILayer`.
+- **Evidências confirmadas:** nomes como `BattleNet::processFrameUpdate`, `GameScene::updateLogicFrame`, `Hero::setStickDir`, `CSkill::Update` e `BattleFieldController::handleFrameUpdate` existem no executável. Isso **não** comprova suas fórmulas ou o funcionamento interno.
+- O novo **F7 — ELF ARM64** permite inspecionar classes e amostras de endereços e métodos; não executa código Android.
+- `tools/auditar_elf.py` extrai metadados de forma reproduzível do APK do usuário, sem executar as bibliotecas. Requer `readelf` e `c++filt` (Binutils ou LLVM; WSL no Windows). Regenera `reports/native_arm64.json`, `reports/native_symbols.csv` e `reports/native_findings.lua`.
+- O GitHub inclui um **catálogo de amostra** em `reports/native_findings.lua` para consulta imediata na F7. Os relatórios JSON/CSV integrais são gerados localmente com o script e também acompanham o ZIP completo desta fase. O repositório público não inclui o APK nem suas bibliotecas.
+
+```powershell
+python tools/auditar_elf.py "C:\\caminho\\BarbarQ.apk" --out reports
+python -m unittest discover -s tests -v
+```
+
+**Validação desta fase:** 26 testes automatizados passaram sem falhas e sem testes ignorados quando os recursos extraídos do APK estão presentes. Os ZIPs e o cache Lua também passaram em verificações de integridade e sintaxe. Ainda não há validação gráfica em um PC Windows nem jogo jogável.
+
 
 - **Fase 10 — subcenas:** o CSB declara 1.005 nós `ProjectNode`; 985 apontam para cenas que estão presentes no próprio APK e 20 não contêm nome válido. A aba F6 permite selecionar um `ProjectNode` e pressionar `Enter` para inspecionar a cena referenciada, e `Backspace` para retornar. Há bloqueio de ciclos, caminhos inválidos, ambiguidades e profundidade acima de 16. Isto **não** corresponde à navegação real do jogador entre menus; são referências de composição de cena.
 - **Fase 10 — botões:** recuperadas 2.313 imagens de estado normal, 612 de estado pressionado e 956 de estado desabilitado dos 2.909 botões encontrados. `H` alterna somente os estados declarados para o botão selecionado, como ferramenta de inspeção visual; não executa cliques ou callbacks do jogo. Quatro nós em toda a coleção apresentam callback textual `Click`, insuficiente para reconstruir a lógica.
@@ -77,7 +94,7 @@ Os ZIPs de teste **com recursos** já incluem `assets_original/` e `cache/`, ent
 
 | Atalho | Operação |
 |---|---|
-| `F1` a `F6` | Mapas, imagens, atlas, configurações, animações, cenas CSB |
+| `F1` a `F7` | Mapas, imagens, atlas, configurações, animações, cenas CSB, auditoria ELF |
 | `↑` / `↓` e clique | Selecionar um arquivo na lista lateral (F2–F5) |
 | Digitar / `Esc` | Filtrar ou limpar a lista (F2–F5) |
 | `WASD` e roda do mouse | Câmara e zoom na inspeção de mapas |
@@ -100,6 +117,8 @@ Os ZIPs de teste **com recursos** já incluem `assets_original/` e `cache/`, ent
 | Diretório/arquivo | Papel |
 |---|---|
 | `tools/extrair_barbarq.py` | Extrai recursos do VISPACK |
+| `tools/auditar_elf.py` | Extrai nomes, tamanhos e endereços virtuais de símbolos ELF ARM64, sem execução nativa |
+| `src/native_view.lua` | Visualizador F7 do catálogo de funções nativas |
 | `tools/bplist.py` | Decodifica atlas `.bplist` com validação de limites |
 | `tools/bexport.py` | Decodifica animações `.bexportjson` sem executar dados externos |
 | `tools/csb.py` | Leitor FlatBuffers das cenas do Cocos Studio, com limites e validações |
