@@ -1,13 +1,15 @@
 -- Bar-Lua | laboratório de engenharia reversa do BarbarQ 1.0.1811.
 -- NÃO é o jogo: apenas visualização fiel de dados originais decodificados.
-local modes = {"Mapas TMX", "Imagens", "Atlas .plist/.bplist", "Configurações", "Animações", "Cenas .csb"}
+local modes = {"Mapas TMX", "Imagens", "Atlas .plist/.bplist", "Configurações", "Animações", "Cenas .csb", "ELF ARM64"}
+local tabLabels = {"Mapas", "Imagens", "Atlas", "Config.", "Animações", "Cenas", "ELF"}
 local animationView = require("src.animation_view")
 local sceneView = require("src.scene_view")
+local nativeView = require("src.native_view")
 local sceneResources = require("src.scene_resources")
 local spriteGeometry = require("src.sprite_geometry")
 local mode, selected, search, zoom = 1, 1, "", 1
-local lists = {{}, {}, {}, {}, {}, {}}
-local maps, atlases, animations, scenes = {}, {}, {}, {}
+local lists = {{}, {}, {}, {}, {}, {}, {}}
+local maps, atlases, animations, scenes, nativeCatalog = {}, {}, {}, {}, {}
 local sceneResourceIndex = nil
 local imageIndex = {}
 local textures, quads = {}, {}
@@ -113,7 +115,7 @@ local function drawShell(w, h, list)
     for i, name in ipairs(modes) do
         local x = 14 + (i - 1) * tabwidth
         if i == mode then background(x - 3, 49, tabwidth - 6, 31, {0.28, 0.37, 0.46}) end
-        put("F" .. i .. " " .. name, x, 55, {0.94, 0.94, 1}, small)
+        put("F" .. i .. " " .. tabLabels[i], x, 55, {0.94, 0.94, 1}, small)
     end
     background(0, TOP, SIDE, h - TOP, {0.10, 0.13, 0.17})
     put("Filtrar: " .. search .. "_", 12, TOP + 10, {1, 0.82, 0.44}, small)
@@ -130,7 +132,7 @@ local function drawShell(w, h, list)
         put(label, 13, y, i == selected and {1, 1, 1} or {0.74, 0.80, 0.84}, small)
     end
     background(0, h - BOTTOM, w, BOTTOM, {0.12, 0.16, 0.20})
-    put("↑↓: selecionar  •  [ ]: sprite  •  F1–F6: painel  •  Esc: limpar", 13, h - BOTTOM + 7, {0.85, 0.90, 0.96}, small)
+    put("↑↓: selecionar  •  [ ]: sprite  •  F1–F7: painel  •  Esc: limpar", 13, h - BOTTOM + 7, {0.85, 0.90, 0.96}, small)
     put(status, 13, h - BOTTOM + 29, {0.72, 0.80, 0.87}, small)
 end
 
@@ -336,12 +338,14 @@ function love.load()
     atlases = readLua("cache/atlases.lua")
     animations = readLua("cache/animations.lua")
     scenes = readLua("cache/scenes.lua")
+    nativeCatalog = readLua("reports/native_findings.lua")
     for _, map in ipairs(maps) do lists[1][#lists[1]+1] = map end
     scan("assets_original", {png = true, jpg = true, jpeg = true}, lists[2])
     for _, atlas in ipairs(atlases) do lists[3][#lists[3]+1] = atlas end
     scan("assets_original/configdata", {txt = true}, lists[4])
     for _, entry in ipairs(animations) do lists[5][#lists[5]+1] = entry end
     for _, entry in ipairs(scenes) do lists[6][#lists[6]+1] = entry end
+    for _, entry in ipairs(nativeCatalog) do lists[7][#lists[7]+1] = entry end
     for _, path in ipairs(lists[2]) do
         imageIndex[path:gsub("^assets_original/", ""):lower()] = path:gsub("^assets_original/", "")
     end
@@ -400,6 +404,9 @@ function love.draw()
                 local quad = image and spriteQuad(found.atlas, found.frame, image)
                 return quad and {kind='atlas',image=image,quad=quad,frame=found.frame} or nil
             end})
+    elseif mode == 7 and item then
+        nativeView.draw(item, {x=x, y=y, w=pw, h=ph,
+            put=put, background=background, small=small})
     else
         local message = (mode == 1 or mode == 3) and "Sem dados preparados. Execute tools/preparar_recursos.py." or "Nenhum recurso encontrado. Extraia o APK para assets_original."
         put(message, x + 18, y + 40)
@@ -407,7 +414,7 @@ function love.draw()
 end
 
 function love.keypressed(key)
-    local n = key:match("^f([1-6])$")
+    local n = key:match("^f([1-7])$")
     if n then setMode(tonumber(n)); return end
     local list = visibleList()
     if mode == 6 then
