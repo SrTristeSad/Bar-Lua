@@ -2,6 +2,7 @@
 -- NÃO é o jogo: apenas visualização fiel de dados originais decodificados.
 local modes = {"Mapas TMX", "Imagens", "Atlas .plist/.bplist", "Configurações", "Animações"}
 local animationView = require("src.animation_view")
+local spriteGeometry = require("src.sprite_geometry")
 local mode, selected, search, zoom = 1, 1, "", 1
 local lists = {{}, {}, {}, {}, {}}
 local maps, atlases, animations = {}, {}, {}
@@ -278,12 +279,24 @@ local function drawAtlas(atlas, x, y, w, h)
     put(label, rightX, y + 83, {1, 1, 1}, small)
     local quad = spriteQuad(atlas, f, img)
     if quad then
-        local sw, sh = f.w, f.h
+        local sw, sh = spriteGeometry.size(f)
         local previewHeight = math.max(15, h - 210)
-        local sf = math.min(rightW / sw, previewHeight / sh, 4)
+        local sourceW, sourceH = f.source_w or sw, f.source_h or sh
+        local sf = math.max(0.01, math.min(rightW / math.max(sourceW, sw, 1),
+            previewHeight / math.max(sourceH, sh, 1), 4))
+        love.graphics.push()
+        love.graphics.translate(rightX + rightW / 2, y + 119 + previewHeight / 2)
+        love.graphics.scale(sf, -sf)
+        love.graphics.setLineWidth(1 / sf)
+        local lx, ly, rx, ry = spriteGeometry.sourceBounds(f)
+        love.graphics.setColor(0.9, 0.72, 0.25, 0.55)
+        love.graphics.rectangle("line", lx, ly, rx - lx, ry - ly)
         love.graphics.setColor(1, 1, 1)
-        love.graphics.draw(img, quad, rightX + rightW / 2 - sw * sf / 2,
-            y + 119 + (previewHeight - sh * sf) / 2, 0, sf, sf)
+        spriteGeometry.draw(img, quad, f)
+        local bx, by, ex, ey = spriteGeometry.bounds(f)
+        love.graphics.setColor(0.2, 0.94, 0.62, 0.85)
+        love.graphics.rectangle("line", bx, by, ex - bx, ey - by)
+        love.graphics.pop()
     end
     put(string.format("Atlas: (%d,%d)  %dx%d", f.x, f.y, f.w, f.h),
         rightX, y + h - 74, {0.75, 0.85, 0.92}, small)
@@ -374,6 +387,7 @@ function love.keypressed(key)
         if key == "space" then animationView.toggle(); return end
         if key == "i" then animationView.toggleInterpolate(); return end
         if key == "b" then animationView.toggleBind(); return end
+        if key == "p" then animationView.toggleGuides(); return end
         if key == "left" then animationView.step(selectedItem(), -1); return end
         if key == "right" then animationView.step(selectedItem(), 1); return end
         if key == "tab" then
@@ -405,7 +419,7 @@ end
 function love.textinput(text)
     -- WASD no mapa é controle da câmera, não texto de busca.
     if mode == 3 and (text == "[" or text == "]") then return end
-    if mode == 5 and (text == "i" or text == "b" or text == "I" or text == "B") then return end
+    if mode == 5 and (text:lower() == "i" or text:lower() == "b" or text:lower() == "p") then return end
     if mode ~= 1 and #search < 80 and text:match("%g") then search = search .. text; selected = 1; resetImage(); if mode == 5 then animationView.reset() end end
 end
 
