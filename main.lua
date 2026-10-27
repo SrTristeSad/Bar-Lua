@@ -346,6 +346,7 @@ function love.load()
         imageIndex[path:gsub("^assets_original/", ""):lower()] = path:gsub("^assets_original/", "")
     end
     sceneResourceIndex = sceneResources.build(atlases, imageIndex)
+    sceneView.setCatalog(scenes)
     table.sort(lists[2]); table.sort(lists[4])
     if #maps == 0 then
         status = "Execute o extrator do APK e o preparador Python conforme README."
@@ -411,6 +412,15 @@ function love.keypressed(key)
     local list = visibleList()
     if mode == 6 then
         if key == "tab" then sceneView.next(selectedItem(), love.keyboard.isDown("lshift", "rshift") and -1 or 1); return end
+        if key == "return" or key == "kpenter" then
+            local ok, reason = sceneView.openReference(selectedItem())
+            if not ok then status = reason or 'A subcena não está disponível' end
+            return
+        end
+        if key == "backspace" and sceneView.depth(selectedItem())>0 then
+            sceneView.back(selectedItem()); return
+        end
+        if key == "h" then sceneView.cycleButton(selectedItem()); return end
         if key == "g" then sceneView.toggleGuides(); return end
         if key == "v" then sceneView.toggleHidden(); return end
         if key == "t" then sceneView.toggleText(); return end
