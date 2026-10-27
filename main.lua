@@ -3,10 +3,12 @@
 local modes = {"Mapas TMX", "Imagens", "Atlas .plist/.bplist", "Configurações", "Animações", "Cenas .csb"}
 local animationView = require("src.animation_view")
 local sceneView = require("src.scene_view")
+local sceneResources = require("src.scene_resources")
 local spriteGeometry = require("src.sprite_geometry")
 local mode, selected, search, zoom = 1, 1, "", 1
 local lists = {{}, {}, {}, {}, {}, {}}
 local maps, atlases, animations, scenes = {}, {}, {}, {}
+local sceneResourceIndex = nil
 local imageIndex = {}
 local textures, quads = {}, {}
 local position = {x = 0, y = 0}
@@ -343,6 +345,7 @@ function love.load()
     for _, path in ipairs(lists[2]) do
         imageIndex[path:gsub("^assets_original/", ""):lower()] = path:gsub("^assets_original/", "")
     end
+    sceneResourceIndex = sceneResources.build(atlases, imageIndex)
     table.sort(lists[2]); table.sort(lists[4])
     if #maps == 0 then
         status = "Execute o extrator do APK e o preparador Python conforme README."
@@ -385,10 +388,16 @@ function love.draw()
     elseif mode == 6 and item then
         sceneView.draw(item, {x=x, y=y, w=pw, h=ph,
             put=put, background=background, small=small,
-            resolveImage=function(path, kind)
-                if kind ~= 0 then return nil end
-                local match = imageIndex[path:gsub("\\", "/"):lower()]
-                return match and imageFor(match) or nil
+            resolveResource=function(resource)
+                local found = sceneResources.find(sceneResourceIndex, resource)
+                if not found then return nil end
+                if found.kind == 'image' then
+                    local image = imageFor(found.path)
+                    return image and {kind='image',image=image} or nil
+                end
+                local image = imageFor(found.atlas.image)
+                local quad = image and spriteQuad(found.atlas, found.frame, image)
+                return quad and {kind='atlas',image=image,quad=quad,frame=found.frame} or nil
             end})
     else
         local message = (mode == 1 or mode == 3) and "Sem dados preparados. Execute tools/preparar_recursos.py." or "Nenhum recurso encontrado. Extraia o APK para assets_original."
@@ -404,6 +413,7 @@ function love.keypressed(key)
         if key == "tab" then sceneView.next(selectedItem(), love.keyboard.isDown("lshift", "rshift") and -1 or 1); return end
         if key == "g" then sceneView.toggleGuides(); return end
         if key == "v" then sceneView.toggleHidden(); return end
+        if key == "t" then sceneView.toggleText(); return end
     end
     if mode == 5 then
         if key == "space" then animationView.toggle(); return end
@@ -443,7 +453,7 @@ function love.textinput(text)
     -- WASD no mapa é controle da câmera, não texto de busca.
     if mode == 3 and (text == "[" or text == "]") then return end
     if mode == 5 and (text:lower() == "i" or text:lower() == "b" or text:lower() == "p") then return end
-    if mode == 6 and (text:lower() == "g" or text:lower() == "v") then return end
+    if mode == 6 and (text:lower() == "g" or text:lower() == "v" or text:lower() == "t") then return end
     if mode ~= 1 and #search < 80 and text:match("%g") then search = search .. text; selected = 1; resetImage(); if mode == 5 then animationView.reset() end; if mode == 6 then sceneView.reset() end end
 end
 
@@ -466,6 +476,10 @@ function love.mousepressed(x, y, button)
             end
             return
         end
+    end
+    if mode == 6 and x >= SIDE then
+        sceneView.pick(selectedItem(), x, y)
+        return
     end
     if x > SIDE or y < TOP + 65 then return end
     local _, h = love.graphics.getDimensions()
