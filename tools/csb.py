@@ -113,6 +113,22 @@ def _node(tree, reader, counters, depth):
         if d:
             res=_resource(d)
             if res:data['resource']=res
+    # Fontes de botões não são imagens. Os campos 1/2/3 são recursos
+    # normal/pressionado/desabilitado; o campo 4 é referência de fonte.
+    if specialized and kind == 'Button':
+        skins = {}
+        for label, field in (('normal', 1), ('pressed', 2), ('disabled', 3)):
+            resource = _resource(specialized.nested(field))
+            if resource:
+                skins[label] = resource
+        if skins:
+            data['button_states'] = skins
+    # ProjectNode guarda um nome de CSB no campo 1. Isto é composição de
+    # cena, NÃO uma ligação entre botões e telas de jogo.
+    if specialized and kind == 'ProjectNode':
+        project = _str(specialized, 1)
+        if project and project.lower().endswith('.csb') and project.lower() != '.csb':
+            data['project_file'] = project
     if specialized and kind in {'Text','TextField','Button','TextBMFont'}:
         index={'Text':4,'TextField':4,'Button':5,'TextBMFont':2}[kind]
         label=_str(specialized,index)
