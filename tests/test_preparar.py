@@ -28,6 +28,9 @@ class ConverterTests(unittest.TestCase):
             self.assertEqual(summary["atlases_xml"], 2)
             self.assertEqual(summary["sprites_xml"], 195)
             self.assertTrue((Path(folder) / 'maps.lua').stat().st_size > 500)
+            self.assertEqual(summary['animation_files'], 1079)
+            self.assertEqual(summary['animation_keyframes'], 38727)
+            self.assertTrue((Path(folder) / 'animations.lua').stat().st_size > 5000)
 
 if __name__ == "__main__":
     unittest.main()
