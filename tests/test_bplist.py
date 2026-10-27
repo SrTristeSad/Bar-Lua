@@ -19,7 +19,7 @@ class AtlasBinaryTests(unittest.TestCase):
             parser.decode_bytes(b"\xff" * 60)
 
     def test_originais_quando_disponiveis(self):
-        original = Path(__file__).resolve().parents[2] / "barbarq_lua_fase1" / "assets_original"
+        original = Path(__file__).resolve().parents[1] / "assets_original"
         if not original.is_dir():
             self.skipTest("Recursos extraídos do APK não estão presentes (opcional)")
         atlases = sorted(original.rglob("*.bplist"))
