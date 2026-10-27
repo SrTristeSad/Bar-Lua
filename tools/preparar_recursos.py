@@ -234,7 +234,30 @@ def prepare(assets: Path, output: Path) -> dict:
     (output / "scenes.lua").write_text(
         "-- Gerado localmente dos .csb originais. Prévia de geometria, NÃO UI operável.\nreturn "
         + lua(scenes) + "\n", encoding="utf-8")
-    stats = {"scenes": len(scenes),
+    declared_buttons = {'normal': 0, 'pressed': 0, 'disabled': 0}
+    project_refs, project_links, callback_count = 0, 0, 0
+    known_scenes = {scene['path'].lower() for scene in scenes}
+    def audit_nodes(node):
+        nonlocal project_refs, project_links, callback_count
+        if node['class'] == 'Button':
+            for state in declared_buttons:
+                if state in node.get('button_states', {}):
+                    declared_buttons[state] += 1
+        if node['class'] == 'ProjectNode':
+            project_refs += 1
+            if node.get('project_file', '').lower() in known_scenes:
+                project_links += 1
+        if node.get('props', {}).get('callback'):
+            callback_count += 1
+        for child in node['children']:
+            audit_nodes(child)
+    for scene in scenes:
+        audit_nodes(scene['root'])
+    stats = {"button_states": declared_buttons,
+             "project_nodes": project_refs,
+             "project_links_found": project_links,
+             "explicit_callbacks": callback_count,
+             "scenes": len(scenes),
              "scene_nodes": sum(s["node_count"] for s in scenes),
              "scene_classes": dict(Counter(k for s in scenes for k, count in s["classes"].items() for _ in range(count))),
              "maps": len(maps), "tile_layers": sum(len(m["layers"]) for m in maps),
