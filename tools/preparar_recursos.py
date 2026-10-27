@@ -18,12 +18,14 @@ import zlib
 try:
     from bplist import BPlistError, decode_file
     from bexport import BExportError, parse_file
+    from csb import SceneError, parse_file as parse_scene
 except ModuleNotFoundError:
     # Carregamento por importlib.spec_from_file_location em testes externos.
     import sys
     sys.path.insert(0, str(Path(__file__).resolve().parent))
     from bplist import BPlistError, decode_file
     from bexport import BExportError, parse_file
+    from csb import SceneError, parse_file as parse_scene
 
 NUMBERS = re.compile(r"-?\d+")
 
@@ -223,7 +225,19 @@ def prepare(assets: Path, output: Path) -> dict:
         + lua(animations) + "\n", encoding="utf-8")
     (output / "maps.lua").write_text("-- Gerado localmente a partir do APK; não versionar.\nreturn " + lua(maps) + "\n", encoding="utf-8")
     (output / "atlases.lua").write_text("-- Gerado localmente a partir do APK; não versionar.\nreturn " + lua(atlases) + "\n", encoding="utf-8")
-    stats = {"maps": len(maps), "tile_layers": sum(len(m["layers"]) for m in maps),
+    scenes = []
+    for path in sorted(assets.rglob("*.csb")):
+        scene = parse_scene(path)
+        scene["path"] = path.relative_to(assets).as_posix()
+        scene["name"] = path.stem
+        scenes.append(scene)
+    (output / "scenes.lua").write_text(
+        "-- Gerado localmente dos .csb originais. Prévia de geometria, NÃO UI operável.\nreturn "
+        + lua(scenes) + "\n", encoding="utf-8")
+    stats = {"scenes": len(scenes),
+             "scene_nodes": sum(s["node_count"] for s in scenes),
+             "scene_classes": dict(Counter(k for s in scenes for k, count in s["classes"].items() for _ in range(count))),
+             "maps": len(maps), "tile_layers": sum(len(m["layers"]) for m in maps),
              "atlases_xml": sum(a["kind"] == "plist XML" for a in atlases),
              "sprites_xml": sum(len(a["frames"]) for a in atlases if a["kind"] == "plist XML"),
              "atlases_bplist": sum(a["kind"] == "bplist FlatBuffers" for a in atlases),
@@ -247,7 +261,7 @@ def main():
     try:
         print(json.dumps(prepare(args.assets, args.out), ensure_ascii=False, indent=2))
         return 0
-    except (ValueError, FileNotFoundError, OSError, ET.ParseError, plistlib.InvalidFileException, BPlistError, BExportError) as exc:
+    except (ValueError, FileNotFoundError, OSError, ET.ParseError, plistlib.InvalidFileException, BPlistError, BExportError, SceneError) as exc:
         parser.exit(1, f"Erro de preparação: {exc}\n")
 
 if __name__ == "__main__":
