@@ -2,13 +2,13 @@
 
 **Objetivo:** estudar um APK original do BarbarQ e reproduzir sua experiência no PC com **Lua e LÖVE2D**, sem emulador Android. Isto **não** é um jogo inspirado no BarbarQ. Os recursos recuperados servem de referência, mas portar a lógica original exige engenharia reversa adicional.
 
-## Estado atual — Fase 8: árvores de interface Cocos Studio (.csb)
+## Estado atual — Fase 9: recursos de atlas nas cenas CSB
 
 O projeto ainda é **um laboratório de visualização; não é uma versão jogável**.
 
 - **VISPACK:** extrator de arquivos do APK 1.0.1811 (ARM64).
 - **Cenas Cocos Studio:** 560 arquivos `.csb` FlatBuffers decodificados, com 26.612 nós de interface recuperados, incluindo 6.820 `ImageView`, 6.099 `Text`, 5.449 `Panel` e 2.909 `Button`. Nomes, caminhos de imagem, `actionTag`, posições, escalas, âncoras, dimensões e hierarquia são convertidos para `cache/scenes.lua`.
-- **Nova aba F6:** inspeção de cena, contornos e tamanhos dos widgets, referências a texturas avulsas do APK e navegação sequencial pela árvore. Texturas que dependem de `.plist`, fontes, efeitos, callbacks e ações do Cocos ainda não são renderizadas como na versão Android.
+- **Aba F6 aprimorada:** inspeção de hierarquia, geometria e imagens reais dos atlas/PNGs quando presentes. Regras de layout, fontes e ações do Cocos ainda não são reconstruídas integralmente.
 - **Mapas:** lê 32 mapas TMX base64/zlib e suas texturas; a câmera e o retículo são apenas ferramentas de investigação.
 - **Atlas:** lê 171 `.bplist` FlatBuffers e 2 `.plist` XML; **13.875 recortes de sprites** catalogados. Uma textura referenciada não está presente no APK.
 - **Animações:** lê os **1.079 `.bexportjson` binários (FlatBuffers)** e reconstrói os metadados de **1.079 armaduras, 2.657 movimentos, 7.452 trilhas de ossos e 38.727 keyframes**.
@@ -43,6 +43,14 @@ O projeto ainda é **um laboratório de visualização; não é uma versão jog�
 
 **Não implementados:** controles de jogador, colisões, combate, IA, itens, menus operacionais, progressão, lobby e partidas online/offline. Ainda será necessária investigação do executável nativo e testes comparativos para uma portabilidade 1:1.
 
+## Fase 9 — Atlas e componentes reais das cenas
+
+- **Resolução de recursos:** `src/scene_resources.lua` mapeia caminhos virtuais dos arquivos `.csb` aos sprites dos atlas `.bplist` (`Gui/gui/Ver_6/...` → `gui/gui.bplist`) e texturas avulsas. Busca exata sem distinção entre maiúsculas/minúsculas e rejeição de nomes ambíguos; nenhuma substituição aleatória.
+- **Auditoria:** nas 11.933 referências de imagens dos 560 arquivos `.csb`, há 10.868 referências apontam para nomes presentes nos atlas (10.866 resolvidas sem ambiguidades), 524 imagens avulsas e 541 referências não resolvidas. São ocorrências de referência (não imagens únicas); parte das ausências são placeholders do Cocos.
+- **Transformação visual:** `src/scene_layout.lua` compõe âncora, posição, escala, flip, aproximação de `skew`/rotação e ordem z estável entre irmãos; permite selecionar um nó por posição usando matrizes inversas.
+- **Aba F6:** desenha subtexturas com tamanho original e deslocamentos dos recortes, respeita opacidade herdada, oferece picking por clique e anotações textuais de depuração alternáveis (`T`). Menus ainda não são jogáveis; clicar seleciona componentes para inspeção, não aciona botões do BarbarQ.
+- **Limitações:** layout responsivo, widgets `scale9`, fonts e eventos originais, ações, blending e renderização Cocos completa não estão implementados. As propriedades de `skew` são aproximadas e exigem comparação com capturas reais. Nenhum teste gráfico no Windows foi executado neste ambiente.
+
 ## Rodar o visualizador no Windows
 
 Requisitos: [LÖVE2D 11.x](https://love2d.org/) e Python 3.10+.
@@ -72,6 +80,7 @@ Os ZIPs de teste **com recursos** já incluem `assets_original/` e `cache/`, ent
 | `P` | Exibir/ocultar caixas do recorte, canvas original e origem F5 |
 | `Tab` / `Shift+Tab` | Navegar entre nós da cena F6 |
 | `G` / `V` | Alternar guias / nós ocultos na cena F6 |
+| `T` / clique na cena | Mostrar/ocultar textos de referência / selecionar nó da cena F6 |
 
 ## Estrutura
 
@@ -81,7 +90,9 @@ Os ZIPs de teste **com recursos** já incluem `assets_original/` e `cache/`, ent
 | `tools/bplist.py` | Decodifica atlas `.bplist` com validação de limites |
 | `tools/bexport.py` | Decodifica animações `.bexportjson` sem executar dados externos |
 | `tools/csb.py` | Leitor FlatBuffers das cenas do Cocos Studio, com limites e validações |
-| `src/scene_view.lua` | Visualizador F6 de hierarquias e retângulos de layout |
+| `src/scene_view.lua` | Visualizador F6 de hierarquias, recortes e seleção |
+| `src/scene_resources.lua` | Resolver de recursos das cenas para atlas ou PNGs avulsos |
+| `src/scene_layout.lua` | Matrizes de hierarquia 2D, ordem z e picking |
 | `tools/preparar_recursos.py` | Converte mapas, atlas e animações para cache Lua local |
 | `src/animation_view.lua` | Visualizador F5 de poses, seleção de displays e sobreposição |
 | `src/sprite_resolver.lua` | Resolução contextual de nomes de sprites e prevenção de colisões |
