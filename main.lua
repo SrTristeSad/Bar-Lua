@@ -372,6 +372,8 @@ function love.keypressed(key)
     local list = visibleList()
     if mode == 5 then
         if key == "space" then animationView.toggle(); return end
+        if key == "i" then animationView.toggleInterpolate(); return end
+        if key == "b" then animationView.toggleBind(); return end
         if key == "left" then animationView.step(selectedItem(), -1); return end
         if key == "right" then animationView.step(selectedItem(), 1); return end
         if key == "tab" then
@@ -403,6 +405,7 @@ end
 function love.textinput(text)
     -- WASD no mapa é controle da câmera, não texto de busca.
     if mode == 3 and (text == "[" or text == "]") then return end
+    if mode == 5 and (text == "i" or text == "b" or text == "I" or text == "B") then return end
     if mode ~= 1 and #search < 80 and text:match("%g") then search = search .. text; selected = 1; resetImage(); if mode == 5 then animationView.reset() end end
 end
 
