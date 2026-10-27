@@ -2,6 +2,19 @@
 
 **Objetivo:** estudar um APK original do BarbarQ e reproduzir sua experiência no PC com **Lua e LÖVE2D**, sem emulador Android. Isto **não** é um jogo inspirado no BarbarQ. Os recursos recuperados servem de referência, mas portar a lógica original exige engenharia reversa adicional.
 
+## Fase 13 — codificação de controle e vetores do ARM64 (laboratório, ainda não jogável)
+
+**Base confirmada:** APK BarbarQ 1.0.1811 ARM64, `libcocos2dcpp.so` com SHA-256 conferido. O analisador `tools/analisar_movimento.py` verifica **23 padrões** de instruções em **cinco funções nativas**, extrai constantes `100.0`, `π` e `180.0` das regiões `PT_LOAD` e produz `reports/native_movement.json`/`.lua`. O relatório publica somente metadados, não a biblioteca nem os bytes do código.
+
+- `Hero::setStickDir(int)` grava um inteiro no deslocamento `+0x324`; `Hero::setSpeed(int)` grava outro em `+0x328`. São offsets de memória da versão estudada, não um protocolo de rede público.
+- `Hero::move_update(float)` usa campos `+0x328`, `+0xd8`, `+0xdc` para construir a soma de dois vetores com `cosDeg`/`sinDeg`; componentes de velocidade são divididos por 100. O resultado é passado a `Entity::move(float,float)`. **Ainda não sabemos** a taxa temporal, colisões, controle de terreno nem as demais regras de `Entity::move`.
+- `GameScene::updateStick()` usa quatro inteiros em `+0x434`/`+0x438`/`+0x43c`/`+0x440`, valores 90/180/270 e um cálculo por média ponderada, além de um ramo que converte radianos em graus. Os campos não receberam nomes de teclas porque isso não foi comprovado.
+- A direção é quantizada por grupos de aproximadamente 4 graus, com casos especiais `-1`, `0→89` e `180→44`; valores como `359` podem resultar em **90**, portanto não pressupomos intervalo 0–89.
+- Quando o código de direção muda, o programa original monta uma mensagem `COperateMessage__ThumbnailMove` e chama `BattleNet::SendCmd`; `+0x2c` guarda o código de direção e `+0x28` uma sequência incrementada em 2. Isso **não comprova** que o transporte e a partida online sejam reproduzíveis.
+- `src/movement_codec.lua` implementa a aritmética observada para inspeção. `src/movement_view.lua` adiciona **F9 — Movimento ARM64** com visualização interativa dos dois vetores e sua soma. Setas ajustam ângulo e velocidade; `J/K` ligam os vetores, `A/Z` alteram a segunda velocidade, `Q/E` o segundo ângulo e `R` reinicia.
+
+**Limitações essenciais:** os cálculos em Lua usam números double, enquanto o executável opera com inteiros de 32 bits e floats ARM64; diferenças de arredondamento podem ocorrer. O laboratório F9 não controla um personagem nem envia comandos, e não foi executado graficamente no Windows. O port 1:1 e a jogabilidade continuam pendentes.
+
 ## Fase 12 — fluxo estático de funções ARM64 (não jogável)
 
 A ferramenta **`tools/analisar_fluxo.py`** usa `llvm-objdump` para examinar **10 funções** com endereços e tamanhos identificados na Fase 11. Confere o SHA-256 da `libcocos2dcpp.so` antes de analisar e produz `reports/native_flow.json` e `reports/native_flow.lua`, contendo **somente metadados** (quantidade de instruções, chamadas diretas `BL`, indiretas `BLR`, desvios condicionais e nomes de alvos). Os relatórios não contêm bytes de executável nem instruções copiadas.
