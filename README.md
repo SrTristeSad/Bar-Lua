@@ -2,26 +2,47 @@
 
 **Objetivo:** estudar um APK original do BarbarQ e reproduzir sua experiência no PC com **Lua e LÖVE2D**, sem emulador Android. Isto **não** é um jogo inspirado no BarbarQ. Os recursos recuperados servem de referência, mas portar a lógica original exige engenharia reversa adicional.
 
-## Estado atual — Fase 11: auditoria ELF ARM64
+## Fase 12 — fluxo estático de funções ARM64 (não jogável)
+
+A ferramenta **`tools/analisar_fluxo.py`** usa `llvm-objdump` para examinar **10 funções** com endereços e tamanhos identificados na Fase 11. Confere o SHA-256 da `libcocos2dcpp.so` antes de analisar e produz `reports/native_flow.json` e `reports/native_flow.lua`, contendo **somente metadados** (quantidade de instruções, chamadas diretas `BL`, indiretas `BLR`, desvios condicionais e nomes de alvos). Os relatórios não contêm bytes de executável nem instruções copiadas.
+
+- **1.576 instruções** de 10 funções ARM64 verificadas nos endereços originais.
+- `Hero::setStickDir(int)` contém apenas `str` seguido de `ret`, o que é evidência de armazenamento de um argumento numa posição da estrutura (não demonstra a escala ou regra do movimento).
+- `GameScene::updateStick()` referencia a construção de `COperateMessage__ThumbnailMove` e `BattleNet::SendCmd` com esse tipo de mensagem, mostrando uma ligação entre controle e envio de operações.
+- `GameScene::updateLogicFrame(float)` tem chamadas para `BattleManager`, `BattleNet`, `ReplaySystem` e `SpectatorSystem`. Um alvo estático **não comprova** que a chamada é executada em todas as partidas.
+- `CSkill::Update(float)` nesta biblioteca específica contém **uma única instrução de retorno**; isso não significa que o sistema de habilidades inteiro seja vazio.
+- **F8 Fluxo ARM64:** aba somente leitura para consultar os alvos estáticos e contadores por função; F1–F7 preservadas. Não executa instruções nativas.
+
+Para reproduzir o relatório com a **mesma versão 1.0.1811** do APK (Windows: LLVM instalado no PATH ou WSL):
+
+```powershell
+py tools/analisar_fluxo.py --apk "C:\caminho\BarbarQ-1.0.1811.apk" --symbols reports/native_symbols.csv --manifest reports/native_arm64.json --out reports
+py -m unittest discover -s tests -v
+```
+
+**Limitações:** a listagem identifica transferências de controle no código compilado, não é rastreamento dinâmico, não identifica destinos de chamadas indiretas por vtables, não reconstrói variáveis, protocolos completos, IA, colisões, fórmulas ou gameplay. Nenhuma funcionalidade jogável foi reivindicada. Não foi realizado teste gráfico real no Windows.
+
+## Estado atual — Fase 11: símbolos do motor nativo ARM64
 
 O projeto ainda é **um laboratório de visualização; não é uma versão jogável**.
 
-### Novidades da Fase 11
+### Investigação da biblioteca nativa (Fase 11)
 
-- **Análise estática comprovada:** o APK 1.0.1811 contém cinco bibliotecas ARM64, incluindo `libcocos2dcpp.so` (aprox. 38,1 MiB). A biblioteca está marcada como stripped, mas preserva **83.660 entradas na tabela dinâmica .dynsym** (83.658 com nomes interpretáveis).
-- Foram catalogados **586 métodos exportados** em 12 classes de interesse: `GameScene`, `BattleNet`, `BattleManager`, `BattleFieldController`, `GameLayer`, `Hero`, `CSkill`, `CSkillEntity`, `CMoveEdge`, `ViewMoveEdge`, `BattleDataManager` e `UILayer`.
-- **Evidências confirmadas:** nomes como `BattleNet::processFrameUpdate`, `GameScene::updateLogicFrame`, `Hero::setStickDir`, `CSkill::Update` e `BattleFieldController::handleFrameUpdate` existem no executável. Isso **não** comprova suas fórmulas ou o funcionamento interno.
-- O novo **F7 — ELF ARM64** permite inspecionar classes e amostras de endereços e métodos; não executa código Android.
-- `tools/auditar_elf.py` extrai metadados de forma reproduzível do APK do usuário, sem executar as bibliotecas. Requer `readelf` e `c++filt` (Binutils ou LLVM; WSL no Windows). Regenera `reports/native_arm64.json`, `reports/native_symbols.csv` e `reports/native_findings.lua`.
-- O GitHub inclui um **catálogo de amostra** em `reports/native_findings.lua` para consulta imediata na F7. Os relatórios JSON/CSV integrais são gerados localmente com o script e também acompanham o ZIP completo desta fase. O repositório público não inclui o APK nem suas bibliotecas.
+- `tools/auditar_elf.py`: audita exclusivamente arquivos ELF64 AArch64 dentro do **APK local**. Usa `readelf` e `c++filt`, sem carregar ou executar bibliotecas. Valida cabeçalho, tamanho máximo e diretórios permitidos antes de analisar.
+- `libcocos2dcpp.so` (aprox. 38,1 MiB) é marcado como *stripped*, mas preserva **83.660 entradas anunciadas** de `.dynsym` (83.658 entradas com nome interpretáveis pelo leitor), incluindo funções C++ nomeadas do jogo. Isso fornece pontos de partida para análise dirigida; não equivale à recuperação de código-fonte ou algoritmos.
+- O relatório extrai e classifica **586 símbolos de métodos** em 12 classes de interesse (`GameScene`, `BattleNet`, `BattleManager`, `BattleFieldController`, `GameLayer`, `Hero`, `CSkill`, `CSkillEntity`, `CMoveEdge`, `ViewMoveEdge`, `BattleDataManager`, `UILayer`). Exemplos efetivamente presentes: `BattleNet::processFrameUpdate`, `GameScene::processPursueFrame`, `Hero::setStickDir`, `CSkill::Update`, `BattleManager::createEntity`.
+- `reports/native_arm64.json`, `reports/native_symbols.csv` e `reports/native_findings.lua` contêm **apenas nomes de símbolos, endereços virtuais, contagens e hashes**, sem redistribuir bibliotecas nem outras partes do APK.
+- **F7 — ELF ARM64:** mostra os nomes de classes, contagens e amostras de funções do relatório para navegação no LÖVE2D. É ferramenta de pesquisa, não uma mecânica jogável.
+- A presença de nomes como `processFrameUpdate`, `setStickDir` e `CreateSkillBySkillConfigId` **não demonstra** qual algoritmo, frame rate, regra de sincronização ou fórmula de combate o BarbarQ usa. Isso exigirá análise de fluxo e testes com o cliente original.
+
+Executar a auditoria numa máquina com Python 3.10+ e Binutils/LLVM (no Windows pode usar WSL):
 
 ```powershell
-python tools/auditar_elf.py "C:\\caminho\\BarbarQ.apk" --out reports
+python tools/auditar_elf.py "C:\caminho\para\BarbarQ.apk" --out reports
 python -m unittest discover -s tests -v
 ```
 
-**Validação desta fase:** 26 testes automatizados passaram sem falhas e sem testes ignorados quando os recursos extraídos do APK estão presentes. Os ZIPs e o cache Lua também passaram em verificações de integridade e sintaxe. Ainda não há validação gráfica em um PC Windows nem jogo jogável.
-
+Os relatórios que acompanham esta versão foram gerados **do APK BarbarQ 1.0.1811 enviado pelo usuário**. Para outra versão, gere relatórios novamente; endereços não são portáveis entre versões.
 
 - **Fase 10 — subcenas:** o CSB declara 1.005 nós `ProjectNode`; 985 apontam para cenas que estão presentes no próprio APK e 20 não contêm nome válido. A aba F6 permite selecionar um `ProjectNode` e pressionar `Enter` para inspecionar a cena referenciada, e `Backspace` para retornar. Há bloqueio de ciclos, caminhos inválidos, ambiguidades e profundidade acima de 16. Isto **não** corresponde à navegação real do jogador entre menus; são referências de composição de cena.
 - **Fase 10 — botões:** recuperadas 2.313 imagens de estado normal, 612 de estado pressionado e 956 de estado desabilitado dos 2.909 botões encontrados. `H` alterna somente os estados declarados para o botão selecionado, como ferramenta de inspeção visual; não executa cliques ou callbacks do jogo. Quatro nós em toda a coleção apresentam callback textual `Click`, insuficiente para reconstruir a lógica.
@@ -94,7 +115,7 @@ Os ZIPs de teste **com recursos** já incluem `assets_original/` e `cache/`, ent
 
 | Atalho | Operação |
 |---|---|
-| `F1` a `F7` | Mapas, imagens, atlas, configurações, animações, cenas CSB, auditoria ELF |
+| `F1` a `F8` | Mapas, imagens, atlas, configurações, animações, cenas CSB, símbolos nativos e fluxo ARM64 |
 | `↑` / `↓` e clique | Selecionar um arquivo na lista lateral (F2–F5) |
 | Digitar / `Esc` | Filtrar ou limpar a lista (F2–F5) |
 | `WASD` e roda do mouse | Câmara e zoom na inspeção de mapas |
@@ -117,14 +138,16 @@ Os ZIPs de teste **com recursos** já incluem `assets_original/` e `cache/`, ent
 | Diretório/arquivo | Papel |
 |---|---|
 | `tools/extrair_barbarq.py` | Extrai recursos do VISPACK |
-| `tools/auditar_elf.py` | Extrai nomes, tamanhos e endereços virtuais de símbolos ELF ARM64, sem execução nativa |
-| `src/native_view.lua` | Visualizador F7 do catálogo de funções nativas |
 | `tools/bplist.py` | Decodifica atlas `.bplist` com validação de limites |
 | `tools/bexport.py` | Decodifica animações `.bexportjson` sem executar dados externos |
 | `tools/csb.py` | Leitor FlatBuffers das cenas do Cocos Studio, com limites e validações |
 | `src/scene_view.lua` | Visualizador F6 de hierarquias, recortes e seleção |
 | `src/scene_resources.lua` | Resolver de recursos das cenas para atlas ou PNGs avulsos |
 | `src/scene_layout.lua` | Matrizes de hierarquia 2D, ordem z e picking |
+| `tools/auditar_elf.py` | Auditoria estática dos ELF AArch64, nomes de símbolos, hashes e endereços virtuais |
+| `tools/analisar_fluxo.py` | Desmontagem estática dirigida a funções da Fase 11; publica somente os metadados de fluxo |
+| `src/flow_view.lua` | Painel F8 somente leitura de referências de fluxo ARM64 |
+| `src/native_view.lua` | Painel F7 com metadados de funções C++ exportadas; não executa código Android |
 | `src/scene_links.lua` | Resolução exata de referências ProjectNode com proteção contra caminhos ambíguos |
 | `tools/preparar_recursos.py` | Converte mapas, atlas e animações para cache Lua local |
 | `src/animation_view.lua` | Visualizador F5 de poses, seleção de displays e sobreposição |
