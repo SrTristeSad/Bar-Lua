@@ -2,11 +2,13 @@
 
 **Objetivo:** estudar um APK original do BarbarQ e reproduzir sua experiência no PC com **Lua e LÖVE2D**, sem emulador Android. Isto **não** é um jogo inspirado no BarbarQ. Os recursos recuperados servem de referência, mas portar a lógica original exige engenharia reversa adicional.
 
-## Estado atual — Fase 7: recortes, eixo Y e inspeção de pivôs
+## Estado atual — Fase 8: árvores de interface Cocos Studio (.csb)
 
 O projeto ainda é **um laboratório de visualização; não é uma versão jogável**.
 
 - **VISPACK:** extrator de arquivos do APK 1.0.1811 (ARM64).
+- **Cenas Cocos Studio:** 560 arquivos `.csb` FlatBuffers decodificados, com 26.612 nós de interface recuperados, incluindo 6.820 `ImageView`, 6.099 `Text`, 5.449 `Panel` e 2.909 `Button`. Nomes, caminhos de imagem, `actionTag`, posições, escalas, âncoras, dimensões e hierarquia são convertidos para `cache/scenes.lua`.
+- **Nova aba F6:** inspeção de cena, contornos e tamanhos dos widgets, referências a texturas avulsas do APK e navegação sequencial pela árvore. Texturas que dependem de `.plist`, fontes, efeitos, callbacks e ações do Cocos ainda não são renderizadas como na versão Android.
 - **Mapas:** lê 32 mapas TMX base64/zlib e suas texturas; a câmera e o retículo são apenas ferramentas de investigação.
 - **Atlas:** lê 171 `.bplist` FlatBuffers e 2 `.plist` XML; **13.875 recortes de sprites** catalogados. Uma textura referenciada não está presente no APK.
 - **Animações:** lê os **1.079 `.bexportjson` binários (FlatBuffers)** e reconstrói os metadados de **1.079 armaduras, 2.657 movimentos, 7.452 trilhas de ossos e 38.727 keyframes**.
@@ -18,16 +20,26 @@ O projeto ainda é **um laboratório de visualização; não é uma versão jog�
 - **Correção do leitor:** a antiga hipótese de usar `frame[11]` como `display_index` continua descartada. A Fase 6 confirma o verdadeiro índice em `frame[0]` e usa `bone[2]` como display inicial.
 - **F1/F2/F3/F4:** painéis de mapa, imagens, atlas e configurações preservados.
 
-### Fase 7: geometria, recortes e guias
+### Fase 8: reconstrução dos metadados de interfaces
 
-- **Inversão vertical correta:** imagens físicas dos atlas usam Y para baixo; a composição de osso do Cocos usa Y para cima. O renderizador em Lua agora converte a orientação da textura sem inverter o personagem.
-- **Trim e offsets:** as coordenadas do recorte e os deslocamentos relativos ao tamanho original são considerados em F3 e F5, preservando o centro do canvas como hipótese de pivô (0,5 × 0,5).
-- **F3:** uma caixa amarela mostra o tamanho da imagem original e a verde mostra o recorte visível.
-- **F5:** pressione `P` para ativar guias de posição e origem. A interpolação linear agora usa o tempo fracionário em vez de truncá-lo antes do cálculo.
-- **Rotação:** o código prevê frames marcados `rotated=true`, mas a coleção original 1.0.1811 possui **0/13.875** frames rotacionados. Este caminho é experimental, não validado no jogo.
-- **Atlas originais auditados:** dos 13.875 sprites, 9.181 têm dimensões recortadas e 9.108 têm offsets; todas as caixas cabem dentro da origem indicada pelos metadados.
+- O leitor `tools/csb.py` decodifica o contêiner `CSParseBinary` e a árvore `NodeTree` de 560 cenas sem executar nenhum arquivo binário como código. A estrutura dos campos usa como referência o esquema público do Cocos Studio, **não** a lógica proprietária do jogo.
+- Recuperados **26.612 nós** com verificação de limites, contagens máximas, validade UTF-8, profundidade da árvore e transformações finitas. Recurso e texto são extraídos apenas de tipos identificados.
+- `tools/preparar_recursos.py` gera `cache/scenes.lua` e atualiza `summary.json` com número de cenas, nós e classes.
+- A aba **F6** apresenta um retângulo de layout por componente, sua hierarquia, origem, tamanho e `z` declarados. Tenta exibir uma textura original **somente** quando ela existe como arquivo avulso no APK. A busca compara caminhos sem diferenciar maiúsculas/minúsculas, como no Android.
+- Inspeção disponível por `Tab`/`Shift+Tab` (nó seguinte/anterior), `G` (guias) e `V` (exibir nós ocultos).
+- **Limitações:** a geometria é uma projeção de depuração. Não implementa escalonamento responsivo do Cocos, `scale9`, fontes customizadas, sprites de atlas, clipping de painéis, rotação completa, blend, fluxo de eventos ou ações de botões. Um botão exibido em F6 **não funciona** como um botão de jogo. O cache local não deve ser publicado no GitHub público por conter dados originais.
 
-**Limites da prévia F7:** os cálculos de pose-base + deltas e a decomposição de skew são **hipóteses de reconstrução**. A interpolação atual é linear e não replica easing Cocos; os assets analisados não expuseram nenhum `parent` textual não vazio para os ossos, então composição de pais está implementada e testada artificialmente, **mas não validada num esqueleto real do APK**. Ainda faltam: cor/blending, validação da âncora/pivô de displays, easing, temporização original e reconciliação com captura do BarbarQ original. A prioridade atual de atlas e a ordem das camadas precisam ser confrontadas visualmente com o jogo para confirmar o resultado. São usados 30 quadros/s **apenas para investigação**. Não apresentar o resultado como fiel 1:1 até comparação real.
+### Fase 7: geometria dos sprites corrigida
+
+- **Orientação das imagens:** cada textura recortada agora é desenhada com a inversão vertical correta entre o atlas (+Y para baixo) e as coordenadas locais Cocos (+Y para cima). A implementação antiga podia apresentar sprites invertidos.
+- **Alinhamento do trim:** `offset_x`/`offset_y`, `source_w`/`source_h` e dimensões reais do recorte são considerados de forma uniforme em F3 e F5. O recorte não é esticado artificialmente para o tamanho original.
+- **Referência visual F3:** quadro amarelo indica a área da imagem original; quadro verde indica os limites da parte visível do sprite. A origem usada é o centro do quadro original (âncora 0,5 × 0,5, uma **hipótese explícita**).
+- **Depuração F5:** a tecla `P` alterna as guias amarelas (imagem original), verdes (recorte) e cruz vermelha (origem do osso). As guias acompanham a transformação local e a pose do osso.
+- **Interpolação subquadro:** F5 passa o tempo fracionário ao avaliador de poses; anteriormente arredondava antes da interpolação, ocultando as transições.
+- **Quadros rotacionados:** o módulo Lua tem um caminho condicional de desrotação para futuros recursos `rotated=true`, mas a auditoria desta versão do APK identificou **0/13.875 sprites rotacionados**. A convenção de rotação é **não validada** com dados reais deste jogo; não reivindicamos uma correção de recurso que não existe no material atual.
+- **Auditoria de atlas:** 13.875 sprites dos 173 atlas; 9.181 têm dimensões recortadas, 9.108 apresentam offsets, e os recortes permanecem dentro dos retângulos de origem declarados.
+
+**Limites da prévia F7:** os cálculos de pose-base + deltas e a decomposição de skew são **hipóteses de reconstrução**. A interpolação atual é linear e não replica easing Cocos; os assets analisados não expuseram nenhum `parent` textual não vazio para os ossos, então composição de pais está implementada e testada artificialmente, **mas não validada num esqueleto real do APK**. Ainda faltam: cor/blending, prova dos pivôs/âncoras de displays, easing, temporização original e reconciliação com captura do BarbarQ original. Não foram encontrados dados de ancoragem explícita nos displays comuns desta versão; a origem no centro é uma hipótese de visualização. A prioridade atual de atlas, a inversão vertical e a ordem das camadas precisam ser confrontadas visualmente com o jogo para confirmar o resultado. São usados 30 quadros/s **apenas para investigação**. Não apresentar o resultado como fiel 1:1 até comparação real.
 
 **Não implementados:** controles de jogador, colisões, combate, IA, itens, menus operacionais, progressão, lobby e partidas online/offline. Ainda será necessária investigação do executável nativo e testes comparativos para uma portabilidade 1:1.
 
@@ -47,7 +59,7 @@ Os ZIPs de teste **com recursos** já incluem `assets_original/` e `cache/`, ent
 
 | Atalho | Operação |
 |---|---|
-| `F1` a `F5` | Mapas, imagens, atlas, configurações, animações |
+| `F1` a `F6` | Mapas, imagens, atlas, configurações, animações, cenas CSB |
 | `↑` / `↓` e clique | Selecionar um arquivo na lista lateral (F2–F5) |
 | Digitar / `Esc` | Filtrar ou limpar a lista (F2–F5) |
 | `WASD` e roda do mouse | Câmara e zoom na inspeção de mapas |
@@ -57,7 +69,9 @@ Os ZIPs de teste **com recursos** já incluem `assets_original/` e `cache/`, ent
 | `Tab` / `Shift+Tab` | Trocar de movimento F5 |
 | `I` | Alternar interpolação linear e quadros discretos F5 |
 | `B` | Alternar inclusão da pose-base F5 |
-| `P` | Guias de origem, canvas completo e recorte F5 |
+| `P` | Exibir/ocultar caixas do recorte, canvas original e origem F5 |
+| `Tab` / `Shift+Tab` | Navegar entre nós da cena F6 |
+| `G` / `V` | Alternar guias / nós ocultos na cena F6 |
 
 ## Estrutura
 
@@ -66,11 +80,14 @@ Os ZIPs de teste **com recursos** já incluem `assets_original/` e `cache/`, ent
 | `tools/extrair_barbarq.py` | Extrai recursos do VISPACK |
 | `tools/bplist.py` | Decodifica atlas `.bplist` com validação de limites |
 | `tools/bexport.py` | Decodifica animações `.bexportjson` sem executar dados externos |
+| `tools/csb.py` | Leitor FlatBuffers das cenas do Cocos Studio, com limites e validações |
+| `src/scene_view.lua` | Visualizador F6 de hierarquias e retângulos de layout |
 | `tools/preparar_recursos.py` | Converte mapas, atlas e animações para cache Lua local |
 | `src/animation_view.lua` | Visualizador F5 de poses, seleção de displays e sobreposição |
 | `src/sprite_resolver.lua` | Resolução contextual de nomes de sprites e prevenção de colisões |
 | `src/pose.lua` | Interpolação e matrizes afins, sem dependência gráfica |
-| `src/sprite_geometry.lua` | Renderização de recorte e conversão do eixo vertical, com testes Lua |
+| `src/sprite_geometry.lua` | Cálculo de recortes, origem, offsets e conversão de eixo, com suporte experimental para atlas rotacionados |
+| `tests/test_sprite_geometry.lua`, `tests/test_animation_view.lua` | Testes Lua do posicionamento, orientação e integração da prévia |
 | `tests/test_pose.lua` | Testes Lua de poses, transições discretas de display e ordem de camadas |
 | `tests/test_sprite_resolver.lua` | Teste Lua de atlas explícitos, locais, globais e colisões |
 | `main.lua`, `conf.lua` | Interface LÖVE2D |
@@ -85,13 +102,17 @@ py -m unittest discover -s tests -v
 py tools/preparar_recursos.py --assets assets_original --out cache
 ```
 
-Os **15 testes Python passaram**, incluindo os executores Lua (`tests/test_pose.lua`, `tests/test_sprite_resolver.lua`) com Lua 5.3 via `luatex --luaonly`. Os **1.079 arquivos binários foram novamente decodificados sem falhas**, inclusive todas as 38.727 poses-chave. Há 18 keyframes que ocultam a imagem com display `-1`. O cache local completo foi regenerado a partir do APK. Sintaxe Lua dos módulos conferida. **Ainda não houve teste visual no LÖVE2D/Windows neste ambiente**; nenhuma fidelidade visual está certificada.
+Os **15 testes Python passaram**, incluindo as suítes Lua de pose, resolução de sprites, geometria e desenho da aba F5 com Lua via `luatex --luaonly`. Os **1.079 arquivos binários foram novamente decodificados sem falhas**, inclusive todas as 38.727 poses-chave. Há 18 keyframes que ocultam a imagem com display `-1`. O cache local completo foi regenerado a partir do APK. Sintaxe Lua dos módulos conferida. **Ainda não houve teste visual no LÖVE2D/Windows neste ambiente**; nenhuma fidelidade visual está certificada.
 
 ## Próximas frentes
 
-1. Comparar a Fase 7 no LÖVE2D para Windows com capturas reais do BarbarQ e investigar pivôs, curvas de easing, cor e taxa de reprodução.
+1. Executar a Fase 7 no LÖVE2D para Windows e comparar imagens e ordem de camadas com capturas do BarbarQ original; investigar âncoras, curvas de easing, cor e taxa de reprodução sem pressupor semântica não confirmada.
 2. Decodificar cenas `.csb`, modelos `.c3b` e informações de configuração pertinentes à jogabilidade.
 3. Reconstruir a movimentação, entidades, física e combate com testes de referência 1:1.
 4. Investigar e, se viável, substituir serviços de rede por uma infraestrutura independente.
 
 Este repositório público distribui somente o código-fonte da investigação. **Não publica** o APK, texturas, áudio, modelos ou outros recursos protegidos do jogo. Use sua própria cópia autorizada do APK para extrair os arquivos localmente.
+
+### Referência de formato para CSB
+
+O mapeamento dos campos comuns `.csb` foi confrontado com o projeto público [csb-flatbuffers-schema](https://github.com/halx99/csb-flatbuffers-schema) e com os arquivos fornecidos do APK. O leitor é uma implementação independente: não inclui nem redistribui o esquema ou binários de terceiros.
