@@ -7,6 +7,7 @@ Nenhum dado binário é executado.
 """
 from __future__ import annotations
 from pathlib import Path
+import math
 from bplist import Buffer, BPlistError
 
 class BExportError(BPlistError):
@@ -60,8 +61,17 @@ def _parse_bytes(data: bytes, *, include_frames: bool = False) -> dict:
                 name = display.string(0)
                 if name:
                     displays.append(clean_name(name, 'imagem'))
+            # Campos 3-4 e 6-9: posição, escala e skew da pose base.
+            # O campo 2 é um valor numérico não identificado; não o usamos
+            # como índice de parentesco. A hierarquia textual está no campo 1.
+            bind = {'x': bone.float(3), 'y': bone.float(4),
+                    'scale_x': bone.float(6, 1.0), 'scale_y': bone.float(7, 1.0),
+                    'skew_x': bone.float(8), 'skew_y': bone.float(9)}
+            if not all(math.isfinite(v) for v in bind.values()):
+                raise BExportError('Transformação de osso não finita')
             bones.append({'name': clean_name(bone.string(0), 'osso'),
-                          'parent': bone.string(1), 'displays': displays})
+                          'parent': bone.string(1), 'displays': displays,
+                          'bind': bind})
         if len(bones) > MAX_BONES:
             raise BExportError("Armadura com ossos demais")
         armatures.append({'name': clean_name(arm.string(2), 'armadura'), 'bones': bones,
@@ -83,13 +93,17 @@ def _parse_bytes(data: bytes, *, include_frames: bool = False) -> dict:
                     at = frame.uint(8)
                     if at > 1000000:
                         raise BExportError("Índice de keyframe inválido")
-                    # f1/f2: posição; f4/f5: escala; f6/f7: deformação.
-                    # Outros campos são mantidos fora da prévia até confirmar semântica.
+                    # f1/f2: posição, f4/f5: escala, f6/f7: skew.
+                    # O campo 11 NÃO é confirmado como displayIndex: em alguns
+                    # arquivos ele armazena um offset FlatBuffers. A Fase 4
+                    # interpretava-o como índice; removemos a suposição.
                     if include_frames:
-                        keys.append({'at': at, 'x': frame.float(1), 'y': frame.float(2),
-                                     'scale_x': frame.float(4, 1.0), 'scale_y': frame.float(5, 1.0),
-                                     'skew_x': frame.float(6), 'skew_y': frame.float(7),
-                                     'display_index': frame.uint(11, 0)})
+                        key = {'at': at, 'x': frame.float(1), 'y': frame.float(2),
+                               'scale_x': frame.float(4, 1.0), 'scale_y': frame.float(5, 1.0),
+                               'skew_x': frame.float(6), 'skew_y': frame.float(7)}
+                        if not all(math.isfinite(v) for k, v in key.items() if k != 'at'):
+                            raise BExportError('Transformação de keyframe não finita')
+                        keys.append(key)
                 tracks.append({'bone': clean_name(track.string(0), 'trilha'),
                                'key_count': len(frames), 'keys': keys})
             movements.append({'name': clean_name(move.string(0), 'movimento'),
