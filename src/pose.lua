@@ -1,6 +1,6 @@
--- Fase 5: avaliação de poses e matrizes afins 2D.
--- Aproximação de investigação. Não reproduz easing, troca de display, pivôs,
--- cores ou composição/velocidade completa do motor Cocos Studio.
+-- Fase 6: avaliação de poses, displays e matrizes afins 2D.
+-- Aproximação de investigação. Trocas de display são discretas;
+-- não reproduz easing, pivôs, cores ou temporização original do Cocos Studio.
 local M = {}
 
 local function value(t, key, default)
@@ -60,6 +60,33 @@ function M.apply(matrix, x, y)
            matrix.b * x + matrix.d * y + matrix.ty
 end
 
+-- Seleção discreta de textura: base 0, -1 = oculto.
+function M.displayAt(bone, track, frame)
+    local selected = bone and bone.initial_display or 0
+    for _, key in ipairs(track and track.keys or {}) do
+        if key.at > frame then break end
+        if type(key.display_index) == 'number' then selected = key.display_index end
+    end
+    return selected
+end
+
+-- Renderização de trás para frente; empates conservam a ordem de origem.
+function M.ordered(nodes)
+    local sorted = {}
+    for i, node in ipairs(nodes) do
+        sorted[#sorted + 1] = {index = i, node = node}
+    end
+    table.sort(sorted, function(a, b)
+        local za = a.node.bone.layer_order or 0
+        local zb = b.node.bone.layer_order or 0
+        if za == zb then return a.index < b.index end
+        return za < zb
+    end)
+    local result = {}
+    for i, entry in ipairs(sorted) do result[i] = entry.node end
+    return result
+end
+
 function M.evaluate(armature, movement, frame, tween, withBind)
     local bones = armature and armature.bones or {}
     local byName, tracks = {}, {}
@@ -94,7 +121,8 @@ function M.evaluate(armature, movement, frame, tween, withBind)
     for _, bone in ipairs(bones) do
         result[#result + 1] = {
             name = bone.name, bone = bone, matrix = world(bone.name),
-            animated = tracks[bone.name] ~= nil
+            animated = tracks[bone.name] ~= nil,
+            display_index = M.displayAt(bone, tracks[bone.name], frame)
         }
     end
     return result
