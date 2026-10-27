@@ -1,0 +1,12 @@
+# Recursos do BarbarQ e dados gerados localmente: NÃO publicar.
+/assets_original/
+/cache/
+*.apk
+*.apks
+*.xapk
+*.love
+*.zip
+__pycache__/
+.pytest_cache/
+.DS_Store
+Thumbs.db
