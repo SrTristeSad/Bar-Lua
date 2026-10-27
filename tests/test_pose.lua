@@ -34,4 +34,25 @@ local missing = pose.evaluate({bones={{name='alone',parent='absent'}}}, {tracks=
 assert(missing[1].matrix, 'sem pai válido não pode travar')
 local circular = pose.evaluate({bones={{name='a',parent='b'},{name='b',parent='a'}}}, {tracks={}},0,true,true)
 assert(circular[1].matrix and circular[2].matrix, 'ciclo deve ser tratado sem recursão infinita')
+
+
+local boneSwitch = {name='torso',initial_display=2,layer_order=4,displays={'a.png','b.png','c.png'}}
+local switching = {keys={
+ {at=0, display_index=0}, {at=5, display_index=1},
+ {at=9, display_index=-1}, {at=12, display_index=2}
+}}
+assert(pose.displayAt(boneSwitch,switching,0)==0)
+assert(pose.displayAt(boneSwitch,switching,3)==0, 'displays não interpolam')
+assert(pose.displayAt(boneSwitch,switching,6)==1)
+assert(pose.displayAt(boneSwitch,switching,9)==-1, 'osso oculto')
+assert(pose.displayAt(boneSwitch,switching,13)==2)
+assert(pose.displayAt(boneSwitch,nil,0)==2, 'display inicial')
+local ordered = pose.ordered({
+ {bone={layer_order=4},name='front'}, {bone={layer_order=1},name='back'},
+ {bone={layer_order=4},name='front2'}, {bone={layer_order=2},name='middle'}})
+assert(ordered[1].name=='back' and ordered[2].name=='middle'
+   and ordered[3].name=='front' and ordered[4].name=='front2', 'ordem estável')
+local nodesNew = pose.evaluate({bones={boneSwitch}}, {tracks={{bone='torso',keys=switching.keys}}}, 9, true, true)
+assert(nodesNew[1].display_index==-1, 'ocultação integra avaliação')
 print('Testes pose: OK')
+print('Testes sprites e ordem: OK')
