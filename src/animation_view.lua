@@ -1,7 +1,8 @@
 -- Laboratório visual de keyframes Cocos Studio, não renderizador definitivo.
 -- Coordenadas, escala e indexação foram recuperadas do APK. Hierarquia,
 -- tweening, skew, orientações especiais e blending aguardam validação.
-local M = {movement = 1, time = 0, running = true}
+local pose = require("src.pose")
+local M = {movement = 1, time = 0, running = true, interpolate = true, useBind = true}
 local spriteLookup
 local lastAnimation
 
@@ -43,6 +44,14 @@ function M.toggle()
     M.running = not M.running
 end
 
+function M.toggleInterpolate()
+    M.interpolate = not M.interpolate
+end
+
+function M.toggleBind()
+    M.useBind = not M.useBind
+end
+
 function M.step(asset, delta)
     local item = active(asset)
     if item then
@@ -77,13 +86,18 @@ local function indexAtlases(atlases)
     return lookup, glob
 end
 
-local function atFrame(track, frameIndex)
-    local best
-    for _, key in ipairs(track.keys or {}) do
-        if key.at > frameIndex then break end
-        best = key
+local function spriteBox(matrix, f)
+    -- Bounding box calculada com a transformação afim, incluindo skew.
+    local ox, oy = f.offset_x or 0, f.offset_y or 0
+    local x1, y1 = -f.w / 2 + ox, -f.h / 2 + oy
+    local x2, y2 = x1 + f.w, y1 + f.h
+    local minx, maxx, miny, maxy = math.huge, -math.huge, math.huge, -math.huge
+    for _, p in ipairs({{x1,y1},{x1,y2},{x2,y1},{x2,y2}}) do
+        local tx, ty = pose.apply(matrix, p[1], p[2])
+        minx, maxx = math.min(minx, tx), math.max(maxx, tx)
+        miny, maxy = math.min(miny, ty), math.max(maxy, ty)
     end
-    return best
+    return minx, miny, maxx, maxy
 end
 
 function M.draw(asset, atlases, ctx)
@@ -107,37 +121,37 @@ function M.draw(asset, atlases, ctx)
     put(string.format("Quadro %d / %d  •  %d trilhas  •  %s", frameIndex, duration,
         ntracks, M.running and "reproduzindo" or "pausado"),
         x + 12, y + 61, {0.78, 0.88, 0.96}, ctx.small)
-    put("Prévia experimental: sem interpolação, hierarquia/skew ou blending Cocos.",
-        x + 12, y + h - 102, {1, 0.73, 0.49}, ctx.small)
+    put(string.format("Prévia: %s  |  base: %s  |  troca de display ainda não interpretada",
+        M.interpolate and "interpolada" or "discreta", M.useBind and "ligada" or "desligada"),
+        x + 12, y + h - 105, {1, 0.73, 0.49}, ctx.small)
 
     if not spriteLookup then
         local global
         spriteLookup, global = indexAtlases(atlases)
         M.global = global
     end
-    local boneByName = {}
-    for _, armature in ipairs(asset.armatures or {}) do
-        for _, bone in ipairs(armature.bones or {}) do
-            boneByName[bone.name] = bone
-        end
-    end
     local folder = dirname(asset.path)
     local poses = {}
     local missing = 0
-    for _, track in ipairs(movement.tracks) do
-        local bone = boneByName[track.bone]
-        local key = atFrame(track, frameIndex)
-        local name = bone and bone.displays and bone.displays[1]
+    -- Os nomes das armaduras observadas no APK podem divergir de nomes
+    -- de animações; a seleção da primeira armadura continua provisória.
+    local armature = asset.armatures and asset.armatures[1]
+    local nodes = pose.evaluate(armature, movement, frameIndex, M.interpolate, M.useBind)
+    for _, node in ipairs(nodes) do
+        local name = node.bone.displays and node.bone.displays[1]
+        -- Só renderizamos o primeiro display: o campo binário que identifica
+        -- mudanças de display ainda não foi mapeado com segurança.
         local sprite = name and (spriteLookup[folder .. "/" .. name] or M.global[name])
-        if key and sprite and not sprite.frame.rotated then
+        if sprite and not sprite.frame.rotated then
             local image = ctx.imageFor(sprite.atlas.image)
             if image then
                 local quad = ctx.spriteQuad(sprite.atlas, sprite.frame, image)
-                if quad then poses[#poses + 1] = {key = key, image = image, quad = quad, f = sprite.frame} end
-            end
-        else
-            missing = missing + 1
-        end
+                if quad and node.matrix then
+                    poses[#poses + 1] = {matrix = node.matrix, image = image,
+                        quad = quad, f = sprite.frame}
+                else missing = missing + 1 end
+            else missing = missing + 1 end
+        else missing = missing + 1 end
     end
     local px, py, pw, ph = x + 12, y + 92, w - 24, h - 214
     if pw < 80 or ph < 90 then return end
@@ -146,25 +160,28 @@ function M.draw(asset, atlases, ctx)
         put("Nenhuma pose com textura correspondente nesta animação.", px + 14, py + 25, nil, ctx.small)
     else
         local minx, miny, maxx, maxy = math.huge, math.huge, -math.huge, -math.huge
-        for _, pose in ipairs(poses) do
-            local k, f = pose.key, pose.f
-            local sw, sh = math.abs(k.scale_x) * f.w, math.abs(k.scale_y) * f.h
-            minx = math.min(minx, k.x - sw / 2)
-            maxx = math.max(maxx, k.x + sw / 2)
-            miny = math.min(miny, k.y - sh / 2)
-            maxy = math.max(maxy, k.y + sh / 2)
+        for _, item in ipairs(poses) do
+            local a, b, c, d = spriteBox(item.matrix, item.f)
+            minx, miny, maxx, maxy = math.min(minx, a), math.min(miny, b),
+                math.max(maxx, c), math.max(maxy, d)
         end
         local midx, midy = (minx + maxx) / 2, (miny + maxy) / 2
         local scale = math.min((pw - 40) / math.max(maxx - minx, 1),
             (ph - 40) / math.max(maxy - miny, 1), 3)
         love.graphics.setScissor(px, py, pw, ph)
-        for _, pose in ipairs(poses) do
-            local k, f = pose.key, pose.f
+        for _, item in ipairs(poses) do
+            local m, f = item.matrix, item.f
+            love.graphics.push()
+            love.graphics.translate(px + pw / 2, py + ph / 2)
+            love.graphics.scale(scale, -scale) -- Cocos +Y para cima; LÖVE +Y para baixo.
+            love.graphics.translate(-midx, -midy)
+            local transform = love.math.newTransform()
+            transform:setMatrix(m.a, m.b, m.c, m.d, m.tx, m.ty)
+            love.graphics.applyTransform(transform)
             love.graphics.setColor(1, 1, 1)
-            love.graphics.draw(pose.image, pose.quad,
-                px + pw / 2 + (k.x - midx) * scale,
-                py + ph / 2 - (k.y - midy) * scale,
-                0, scale * k.scale_x, scale * k.scale_y, f.w / 2, f.h / 2)
+            love.graphics.draw(item.image, item.quad,
+                -f.w / 2 + (f.offset_x or 0), -f.h / 2 + (f.offset_y or 0))
+            love.graphics.pop()
         end
         love.graphics.setScissor()
     end
@@ -174,9 +191,9 @@ function M.draw(asset, atlases, ctx)
     background(barx, bary, barw, 13, {0.28, 0.35, 0.41})
     love.graphics.setColor(1, 0.80, 0.31)
     love.graphics.rectangle("fill", barx, bary, (frameIndex / duration) * barw, 13)
-    put("Espaço: pausa  •  ← →: quadro  •  Tab / Shift+Tab: movimento", x + 12,
+    put("Espaço: pausa  •  ← →: quadro  •  Tab: movimento", x + 12,
         y + h - 44, {0.82, 0.90, 0.94}, ctx.small)
-    put("Velocidade fixa de inspeção: 30 quadros/s (não validada).", x + 12,
+    put("I: interpolação  •  B: pose-base  •  30 quadros/s (não validado)", x + 12,
         y + h - 23, {0.65, 0.76, 0.83}, ctx.small)
 end
 
