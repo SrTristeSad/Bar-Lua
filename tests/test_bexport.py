@@ -17,7 +17,7 @@ class AnimationParserTests(unittest.TestCase):
             parse_bytes(b'\xff' * 100)
 
     def test_parser_de_toda_colecao_opcional(self):
-        original = Path(__file__).resolve().parents[2] / 'barbarq_lua_fase1' / 'assets_original'
+        original = Path(__file__).resolve().parents[1] / 'assets_original'
         if not original.is_dir():
             self.skipTest('APK extraído indisponível (teste de integração opcional)')
         files = sorted(original.rglob('*.bexportjson'))
@@ -42,7 +42,7 @@ class AnimationParserTests(unittest.TestCase):
 
 
     def test_indices_de_display_originais(self):
-        original = Path(__file__).resolve().parents[2] / 'barbarq_lua_fase1' / 'assets_original'
+        original = Path(__file__).resolve().parents[1] / 'assets_original'
         if not original.is_dir():
             self.skipTest('Assets do APK indisponíveis')
         bones = frames = hidden = 0
@@ -69,7 +69,7 @@ class AnimationParserTests(unittest.TestCase):
         self.assertEqual(hidden, 18)
 
     def test_indice_mantem_display_vazio(self):
-        original = Path(__file__).resolve().parents[2] / 'barbarq_lua_fase1' / 'assets_original'
+        original = Path(__file__).resolve().parents[1] / 'assets_original'
         file = original / 'character' / 'lizi' / 'damowangyanwu_001.bexportjson'
         if not file.is_file():
             self.skipTest('Assets do APK indisponíveis')
