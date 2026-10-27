@@ -15,6 +15,14 @@ import struct
 import xml.etree.ElementTree as ET
 import zlib
 
+try:
+    from bplist import BPlistError, decode_file
+except ModuleNotFoundError:
+    # Carregamento por importlib.spec_from_file_location em testes externos.
+    import sys
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from bplist import BPlistError, decode_file
+
 NUMBERS = re.compile(r"-?\d+")
 
 
@@ -157,9 +165,12 @@ def parse_atlas(path: Path, root: Path) -> dict | None:
             x, y, w, h = [int(entry[k]) for k in ("x", "y", "width", "height")]
         else:
             continue
+        src = numvec(str(entry.get("sourceSize", "{" + str(w) + "," + str(h) + "}")), 2)
+        offset = numvec(str(entry.get("offset", "{0,0}")), 2)
         frames.append({"name": name, "x": x, "y": y, "w": w, "h": h,
                        "rotated": bool(entry.get("rotated", entry.get("textureRotated", False))),
-                       "source": entry.get("sourceSize", "")})
+                       "source_w": src[0], "source_h": src[1],
+                       "offset_x": offset[0], "offset_y": offset[1]})
     return {"name": path.stem, "path": path.relative_to(root).as_posix(),
             "image": image_path.relative_to(root).as_posix(), "frames": frames}
 
@@ -174,12 +185,38 @@ def prepare(assets: Path, output: Path) -> dict:
     for path in sorted(assets.rglob("*.plist")):
         atlas = parse_atlas(path, assets)
         if atlas is not None:
+            atlas["kind"] = "plist XML"
             atlases.append(atlas)
+    for path in sorted(assets.rglob("*.bplist")):
+        decoded = decode_file(path)
+        # O nome da textura nos metadados pode variar em maiúsculas/minúsculas.
+        try:
+            image_path = locate(path.parent, decoded["texture"])
+            has_texture = image_path.is_file()
+        except FileNotFoundError:
+            # Alguns .bplist do próprio APK referenciam PNGs ausentes.
+            # Preservamos os metadados e sinalizamos a ausência no visualizador.
+            image_path = path.parent / decoded["texture"]
+            has_texture = False
+        atlas = {"name": path.stem, "path": path.relative_to(assets).as_posix(),
+                 "image": image_path.relative_to(assets).as_posix(),
+                 "missing_image": not has_texture,
+                 "kind": "bplist FlatBuffers", "frames": decoded["frames"]}
+        # Validação: cada frame precisa estar dentro das dimensões declaradas.
+        image_w, image_h = decoded["size"]
+        for frame in atlas["frames"]:
+            if frame["x"] + frame["w"] > image_w or frame["y"] + frame["h"] > image_h:
+                raise BPlistError(f"Sprite fora da textura: {atlas['path']} {frame['name']}")
+        atlases.append(atlas)
     (output / "maps.lua").write_text("-- Gerado localmente a partir do APK; não versionar.\nreturn " + lua(maps) + "\n", encoding="utf-8")
     (output / "atlases.lua").write_text("-- Gerado localmente a partir do APK; não versionar.\nreturn " + lua(atlases) + "\n", encoding="utf-8")
     stats = {"maps": len(maps), "tile_layers": sum(len(m["layers"]) for m in maps),
-             "atlases_xml": len(atlases), "sprites_xml": sum(len(a["frames"]) for a in atlases),
-             "bplist_not_implemented": len(list(assets.rglob("*.bplist")))}
+             "atlases_xml": sum(a["kind"] == "plist XML" for a in atlases),
+             "sprites_xml": sum(len(a["frames"]) for a in atlases if a["kind"] == "plist XML"),
+             "atlases_bplist": sum(a["kind"] == "bplist FlatBuffers" for a in atlases),
+             "sprites_bplist": sum(len(a["frames"]) for a in atlases if a["kind"] == "bplist FlatBuffers"),
+             "atlas_sprites_total": sum(len(a["frames"]) for a in atlases),
+             "atlases_missing_textures": sum(bool(a.get("missing_image")) for a in atlases)}
     (output / "summary.json").write_text(json.dumps(stats, indent=2), encoding="utf-8")
     return stats
 
@@ -192,7 +229,7 @@ def main():
     try:
         print(json.dumps(prepare(args.assets, args.out), ensure_ascii=False, indent=2))
         return 0
-    except (ValueError, FileNotFoundError, OSError, ET.ParseError, plistlib.InvalidFileException) as exc:
+    except (ValueError, FileNotFoundError, OSError, ET.ParseError, plistlib.InvalidFileException, BPlistError) as exc:
         parser.exit(1, f"Erro de preparação: {exc}\n")
 
 if __name__ == "__main__":
