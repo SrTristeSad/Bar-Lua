@@ -59,18 +59,22 @@ def _parse_bytes(data: bytes, *, include_frames: bool = False) -> dict:
             displays = []
             for display in vector(r, bone, 14, 'table'):
                 name = display.string(0)
-                if name:
-                    displays.append(clean_name(name, 'imagem'))
+                # Preservar posições vazias impede deslocar os índices.
+                displays.append(clean_name(name, 'imagem') if name else '')
+            # bone[2]: display inicial; bone[5]: ordem de camada.
             # Campos 3-4 e 6-9: posição, escala e skew da pose base.
-            # O campo 2 é um valor numérico não identificado; não o usamos
-            # como índice de parentesco. A hierarquia textual está no campo 1.
             bind = {'x': bone.float(3), 'y': bone.float(4),
                     'scale_x': bone.float(6, 1.0), 'scale_y': bone.float(7, 1.0),
                     'skew_x': bone.float(8), 'skew_y': bone.float(9)}
             if not all(math.isfinite(v) for v in bind.values()):
                 raise BExportError('Transformação de osso não finita')
+            initial = r.int(bone.addr(2)) if bone.addr(2) is not None else 0
+            if initial < -1 or initial >= len(displays):
+                raise BExportError('Display inicial fora da lista de imagens')
+            order = r.int(bone.addr(5)) if bone.addr(5) is not None else 0
             bones.append({'name': clean_name(bone.string(0), 'osso'),
                           'parent': bone.string(1), 'displays': displays,
+                          'initial_display': initial, 'layer_order': order,
                           'bind': bind})
         if len(bones) > MAX_BONES:
             raise BExportError("Armadura com ossos demais")
@@ -93,12 +97,13 @@ def _parse_bytes(data: bytes, *, include_frames: bool = False) -> dict:
                     at = frame.uint(8)
                     if at > 1000000:
                         raise BExportError("Índice de keyframe inválido")
-                    # f1/f2: posição, f4/f5: escala, f6/f7: skew.
-                    # O campo 11 NÃO é confirmado como displayIndex: em alguns
-                    # arquivos ele armazena um offset FlatBuffers. A Fase 4
-                    # interpretava-o como índice; removemos a suposição.
+                    # frame[0] é o display ZERO-BASED (-1 = oculto),
+                    # validado nos 38.727 keyframes do APK. f1/f2: posição,
+                    # f4/f5: escala, f6/f7: skew. O campo 11 é indeterminado.
                     if include_frames:
-                        key = {'at': at, 'x': frame.float(1), 'y': frame.float(2),
+                        display_index = r.int(frame.addr(0)) if frame.addr(0) is not None else 0
+                        key = {'at': at, 'display_index': display_index,
+                               'x': frame.float(1), 'y': frame.float(2),
                                'scale_x': frame.float(4, 1.0), 'scale_y': frame.float(5, 1.0),
                                'skew_x': frame.float(6), 'skew_y': frame.float(7)}
                         if not all(math.isfinite(v) for k, v in key.items() if k != 'at'):
@@ -109,6 +114,19 @@ def _parse_bytes(data: bytes, *, include_frames: bool = False) -> dict:
             movements.append({'name': clean_name(move.string(0), 'movimento'),
                               'duration': duration, 'tracks': tracks})
         animations.append({'name': clean_name(anim.string(0), 'animação'), 'movements': movements})
+    # Proteção contra arquivos malformados que referenciem textura inexistente.
+    for armature in armatures:
+        by_name = {bone['name']: bone for bone in armature['bones']}
+        for animation in animations:
+            for movement in animation['movements']:
+                for track in movement['tracks']:
+                    bone = by_name.get(track['bone'])
+                    if bone is None:
+                        continue
+                    for key in track['keys']:
+                        i = key['display_index']
+                        if i < -1 or i >= len(bone['displays']):
+                            raise BExportError(f"Display {i} inválido em {track['bone']}")
     sprites = []
     for texture in vector(r, root, 4, 'table'):
         name = texture.string(0)
