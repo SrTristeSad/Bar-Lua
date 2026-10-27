@@ -1,11 +1,13 @@
 -- Bar-Lua | laboratório de engenharia reversa do BarbarQ 1.0.1811.
 -- NÃO é o jogo: apenas visualização fiel de dados originais decodificados.
-local modes = {"Mapas TMX", "Imagens", "Atlas .plist", "Configurações"}
+local modes = {"Mapas TMX", "Imagens", "Atlas .plist/.bplist", "Configurações"}
 local mode, selected, search, zoom = 1, 1, "", 1
 local lists = {{}, {}, {}, {}}
 local maps, atlases = {}, {}
 local textures, quads = {}, {}
 local position = {x = 0, y = 0}
+local frameIndex = 1
+local atlasClick = nil
 local font, small, titlefont
 local status, currentImage, currentImagePath = "", nil, nil
 local SIDE, TOP, BOTTOM = 310, 92, 58
@@ -35,6 +37,7 @@ end
 
 local function resetImage()
     currentImage, currentImagePath = nil, nil
+    frameIndex, atlasClick = 1, nil
 end
 
 local function setMode(index)
@@ -118,7 +121,7 @@ local function drawShell(w, h, list)
         put(label, 13, y, i == selected and {1, 1, 1} or {0.74, 0.80, 0.84}, small)
     end
     background(0, h - BOTTOM, w, BOTTOM, {0.12, 0.16, 0.20})
-    put("↑↓: selecionar  •  F1–F4: painel  •  texto: filtrar  •  Esc: limpar", 13, h - BOTTOM + 7, {0.85, 0.90, 0.96}, small)
+    put("↑↓: escolher atlas  •  [ ]: sprite  •  F1–F4: painel  •  Esc: limpar", 13, h - BOTTOM + 7, {0.85, 0.90, 0.96}, small)
     put(status, 13, h - BOTTOM + 29, {0.72, 0.80, 0.87}, small)
 end
 
@@ -214,16 +217,79 @@ local function drawImage(item, x, y, w, h)
     put(string.format("%s  |  %d×%d  |  zoom %.2fx", path, iw, ih, zoom), x + 12, y + h - 30, {1, 1, 1}, small)
 end
 
+local function atlasViewport(img, x, y, w, h)
+    local iw, ih = img:getDimensions()
+    local fit = math.min((w - 24) / iw, (h - 80) / ih, 2) * zoom
+    return x + w / 2 - iw * fit / 2, y + h / 2 - ih * fit / 2, fit
+end
+
+local function spriteQuad(atlas, f, img)
+    local iw, ih = img:getDimensions()
+    if f.x < 0 or f.y < 0 or f.w < 1 or f.h < 1 or
+       f.x + f.w > iw or f.y + f.h > ih then return nil end
+    local key = atlas.path .. ":" .. f.x .. ":" .. f.y .. ":" .. f.w .. ":" .. f.h
+    if not quads[key] then
+        quads[key] = love.graphics.newQuad(f.x, f.y, f.w, f.h, iw, ih)
+    end
+    return quads[key]
+end
+
 local function drawAtlas(atlas, x, y, w, h)
     background(x, y, w, h, {0.15, 0.18, 0.21})
+    atlasClick = nil
+    if w < 240 or h < 180 then return end
     local img = imageFor(atlas.image)
-    if not img then put("Atlas sem textura: " .. atlas.image, x + 20, y + 35); return end
+    if not img then
+        put("Textura não presente neste APK:", x + 20, y + 35, {1, 0.7, 0.48}, small)
+        put(atlas.image, x + 20, y + 59, {1, 1, 1}, small)
+        put("Os metadados do atlas foram preservados.", x + 20, y + 83, nil, small)
+        return
+    end
     local iw, ih = img:getDimensions()
-    local fit = math.min((w - 30) / iw, (h - 110) / ih, 2) * zoom
+    local leftWidth = math.max(130, math.floor(w * 0.52))
+    local xx, yy, scale = atlasViewport(img, x, y, leftWidth, h)
+    love.graphics.setScissor(x, y + 40, leftWidth, h - 45)
     love.graphics.setColor(1, 1, 1)
-    love.graphics.draw(img, x + w / 2, y + h / 2, 0, fit, fit, iw / 2, ih / 2)
-    put(string.format("Atlas: %s   |   %d sprites   |   %dx%d", atlas.name, #atlas.frames, iw, ih), x + 15, y + 15, {1, 1, 1}, small)
-    put("Frames no XML .plist carregados sem alterar a imagem original.", x + 15, y + h - 30, {0.85, 0.91, 0.98}, small)
+    love.graphics.draw(img, xx, yy, 0, scale, scale)
+    local n = #atlas.frames
+    if n > 0 then
+        frameIndex = math.max(1, math.min(n, frameIndex))
+        local f = atlas.frames[frameIndex]
+        love.graphics.setColor(1, 0.83, 0.26, 1)
+        love.graphics.setLineWidth(2)
+        love.graphics.rectangle("line", xx + f.x * scale, yy + f.y * scale, f.w * scale, f.h * scale)
+        love.graphics.setLineWidth(1)
+    end
+    love.graphics.setScissor()
+    atlasClick = {atlas = atlas, x = xx, y = yy, scale = scale,
+                  minx = x, miny = y + 40, maxx = x + leftWidth, maxy = y + h - 5}
+    background(x + leftWidth + 5, y + 42, w - leftWidth - 13, h - 85, {0.10, 0.14, 0.17})
+    put(string.format("%s  |  %d sprites  |  %dx%d", atlas.kind or "plist", n, iw, ih),
+        x + 12, y + 12, {1, 1, 1}, small)
+    if n == 0 then return end
+    local f = atlas.frames[frameIndex]
+    local rightX = x + leftWidth + 18
+    local rightW = w - leftWidth - 35
+    put(string.format("Sprite %d / %d", frameIndex, n), rightX, y + 57, {1, 0.83, 0.42}, small)
+    local label = f.name
+    if #label > 35 then label = "..." .. label:sub(-32) end
+    put(label, rightX, y + 83, {1, 1, 1}, small)
+    local quad = spriteQuad(atlas, f, img)
+    if quad then
+        local sw, sh = f.w, f.h
+        local previewHeight = math.max(15, h - 210)
+        local sf = math.min(rightW / sw, previewHeight / sh, 4)
+        love.graphics.setColor(1, 1, 1)
+        love.graphics.draw(img, quad, rightX + rightW / 2 - sw * sf / 2,
+            y + 119 + (previewHeight - sh * sf) / 2, 0, sf, sf)
+    end
+    put(string.format("Atlas: (%d,%d)  %dx%d", f.x, f.y, f.w, f.h),
+        rightX, y + h - 74, {0.75, 0.85, 0.92}, small)
+    put(string.format("Origem: %dx%d   Desloc.: %.1f, %.1f", f.source_w or f.w,
+        f.source_h or f.h, f.offset_x or 0, f.offset_y or 0),
+        rightX, y + h - 51, {0.75, 0.85, 0.92}, small)
+    put("[ ] muda sprite • clique no atlas", x + 12, y + h - 25,
+        {0.87, 0.89, 0.94}, small)
 end
 
 local function drawConfig(path, x, y, w, h)
@@ -255,7 +321,7 @@ function love.load()
     if #maps == 0 then
         status = "Execute o extrator do APK e o preparador Python conforme README."
     else
-        status = string.format("Recursos locais carregados: %d mapas, %d imagens, %d atlas, %d configurações.",
+        status = string.format("Recursos locais: %d mapas, %d imagens, %d atlas, %d configs.",
             #maps, #lists[2], #atlases, #lists[4])
         for i, item in ipairs(maps) do if item.name == "petisland_01" then selected = i; break end end
         local map = activeMap()
@@ -303,12 +369,21 @@ function love.keypressed(key)
     elseif key == "pagedown" then selected = math.min(#list, selected + 10)
     elseif key == "home" then selected = #list > 0 and 1 or 0
     elseif key == "end" then selected = #list
+    elseif mode == 3 and (key == "[" or key == "leftbracket") then
+        local atlas = selectedItem()
+        if atlas then frameIndex = math.max(1, frameIndex - 1) end
+        return
+    elseif mode == 3 and (key == "]" or key == "rightbracket") then
+        local atlas = selectedItem()
+        if atlas then frameIndex = math.min(#atlas.frames, frameIndex + 1) end
+        return
     end
     if mode ~= 1 then resetImage() end
 end
 
 function love.textinput(text)
     -- WASD no mapa é controle da câmera, não texto de busca.
+    if mode == 3 and (text == "[" or text == "]") then return end
     if mode ~= 1 and #search < 80 and text:match("%g") then search = search .. text; selected = 1; resetImage() end
 end
 
@@ -317,7 +392,22 @@ function love.wheelmoved(_, dy)
 end
 
 function love.mousepressed(x, y, button)
-    if button ~= 1 or x > SIDE or y < TOP + 65 then return end
+    if button ~= 1 then return end
+    if mode == 3 and atlasClick and atlasClick.atlas == selectedItem() then
+        local a = atlasClick
+        if x >= a.minx and x < a.maxx and y >= a.miny and y <= a.maxy then
+            local tx = (x - a.x) / a.scale
+            local ty = (y - a.y) / a.scale
+            -- Seleciona o último frame sobreposto, se houver.
+            for index, f in ipairs(a.atlas.frames) do
+                if tx >= f.x and tx < f.x + f.w and ty >= f.y and ty < f.y + f.h then
+                    frameIndex = index
+                end
+            end
+            return
+        end
+    end
+    if x > SIDE or y < TOP + 65 then return end
     local _, h = love.graphics.getDimensions()
     local list = visibleList()
     local visible = math.max(1, math.floor((h - TOP - BOTTOM - 73) / 26))
