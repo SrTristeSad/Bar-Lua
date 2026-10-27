@@ -1,27 +1,25 @@
-# Bar-Lua — BarbarQ 1.0.1811 (portabilidade Windows)
+# Bar-Lua — BarbarQ 1.0.1811 no Windows (reconstrução fiel em Lua)
 
-**Objetivo:** estudar o APK original e reconstruir fielmente o BarbarQ em **Lua/LÖVE2D**, nativo para Windows, sem usar emulador Android. **Não é um jogo inspirado**: qualquer sistema adicionado deve ser baseado no original ou identificado explicitamente como instrumento de pesquisa.
+**Objetivo:** estudar um APK original do BarbarQ e reproduzir sua experiência no PC com **Lua e LÖVE2D**, sem emulador Android. Isto **não** é um jogo inspirado no BarbarQ. Os recursos recuperados servem de referência, mas portar a lógica original exige engenharia reversa adicional.
 
-## Situação atual (fase 3 — atlas FlatBuffers e inspeção de sprites)
+## Estado atual — Fase 4: animações originais
 
-- Extrator do pacote **VISPACK** presente no APK `com.bbqstudio.bbqqoversea`, versão **1.0.1811**.
-- Leitor offline dos mapas originais `.tmx` (base64/zlib; tilesets embutidos e externos `.tsx`).
-- Conversor de atlas XML `.plist` e **171 atlas binários `.bplist` (FlatBuffers)**; foram recuperados **13.875 sprites** com coordenadas, dimensões e referências às texturas (**13.680 dos bplist e 195 dos XML**).
-- Leitor binário com limites de tamanho, versões e offsets validados; suporta os dois modelos de registro observados no APK, sem depender de schemas externos.
-- Visualizador LÖVE2D com painéis **F1 Mapas**, **F2 Imagens**, **F3 Atlas**, **F4 Configurações**, carregando os recursos extraídos do APK.
-- **F3**: quadros individualizados e destacados no atlas original, pré-visualização isolada, navegação pelas teclas `[`/`]` e seleção clicando na imagem do atlas.
-- Renderização dos tiles realmente presentes no mapa (com limitação da área visível), câmera WASD, zoom e troca de mapa.
-- Nenhum APK, textura, som, modelo ou outro recurso protegido é distribuído neste repositório público.
+O projeto ainda é **um laboratório de visualização; não é uma versão jogável**.
 
-**Ainda NÃO é jogável.** O retículo amarelo é um marcador de depuração da câmera, **não** um personagem do jogo. Combate, colisões, habilidades, personagens animados e multiplayer aguardam análise do código nativo e validação. As flags de inversão/rotação do Tiled ainda não são renderizadas; o GID é apresentado em orientação normal. O catálogo de sprites mostra imagens e recortes originais, **não animações reconstruídas**. Um atlas referencia uma textura ausente no próprio APK; a interface informa a ausência sem perder os metadados.
+- **VISPACK:** extrator de arquivos do APK 1.0.1811 (ARM64).
+- **Mapas:** lê 32 mapas TMX base64/zlib e suas texturas; a câmera e o retículo são apenas ferramentas de investigação.
+- **Atlas:** lê 171 `.bplist` FlatBuffers e 2 `.plist` XML; **13.875 recortes de sprites** catalogados. Uma textura referenciada não está presente no APK.
+- **Animações:** lê os **1.079 `.bexportjson` binários (FlatBuffers)** e reconstrói os metadados de **1.079 armaduras, 2.657 movimentos, 7.452 trilhas de ossos e 38.727 keyframes**.
+- **Nova aba F5:** seleção de animação e movimento, controle quadro a quadro, pausa/reprodução e prévia experimental com os sprites originais vinculados por nome ao atlas.
+- **F1/F2/F3/F4:** painéis de mapa, imagens, atlas e configurações preservados.
 
-## Como abrir no Windows
+**Limites da prévia F5:** a pose é um visualizador de dados (amostragem por último keyframe conhecido), não a animação final de Cocos. Ainda faltam composição hierárquica dos ossos, interpolações, rotações/skew, índices de display alternativos, ordem de desenho exata, coordenadas de referência, blending e velocidade original. A prévia usa 30 quadros/s **apenas como convenção de inspeção**. Uma pose visualmente diferente do jogo original **não** deve ser tomada como evidência de que o sprite ou a fonte estão errados.
 
-Requisitos: **Python 3.10+** e **[LÖVE2D 11.x](https://love2d.org/)**.
+**Não implementados:** controles de jogador, colisões, combate, IA, itens, menus operacionais, progressão, lobby e partidas online/offline. Ainda será necessária investigação do executável nativo e testes comparativos para uma portabilidade 1:1.
 
-1. Clone/baixe este repositório.
-2. Coloque o **seu APK original** em uma pasta local (fora do GitHub).
-3. Abra PowerShell na pasta do repositório e execute:
+## Rodar o visualizador no Windows
+
+Requisitos: [LÖVE2D 11.x](https://love2d.org/) e Python 3.10+.
 
 ```powershell
 py tools/extrair_barbarq.py "C:\caminho\para\BarbarQ-1.0.1811.apk" --out assets_original
@@ -29,43 +27,49 @@ py tools/preparar_recursos.py --assets assets_original --out cache
 & "C:\Program Files\LOVE\love.exe" .
 ```
 
-Se desejar somente os recursos dos mapas, imagens, atlas e tabelas para pesquisar:
+Os ZIPs de teste **com recursos** já incluem `assets_original/` e `cache/`, então basta abrir a pasta com LÖVE2D. O ZIP **só com código** exige a extração a partir do APK local.
 
-```powershell
-py tools/extrair_barbarq.py "C:\caminho\BarbarQ-1.0.1811.apk" --out assets_original --ext tmx,tsx,png,jpg,jpeg,plist,txt
-py tools/preparar_recursos.py
-```
+### Navegação
 
-Teclas: **F1–F4** alteram o painel; **↑↓/clique** selecionam atlas ou arquivo; digitar filtra; **Esc** limpa filtro; **roda do mouse** ajusta o zoom; **WASD** move a câmera no mapa; **`[` e `]`** mudam o sprite no painel F3, e clicar sobre um sprite no atlas o seleciona. A visualização de mapas foi pensada para investigação e não deve ser confundida com uma partida.
-
-## Arquitetura
-
-| Caminho | Uso |
+| Atalho | Operação |
 |---|---|
-| `tools/extrair_barbarq.py` | Desempacotamento VISPACK da versão 1.0.1811 |
-| `tools/preparar_recursos.py` | Converte TMX/TSX e atlas plist XML / bplist em tabelas Lua locais |
-| `tools/bplist.py` | Leitura validada de FlatBuffers dos atlas binários proprietários |
-| `main.lua`, `conf.lua` | Interface e renderizador de pesquisa LÖVE2D |
-| `tests/` | Validação Python contra dados locais do APK |
-| `assets_original/` | **Gerada pelo usuário, ignorada pelo Git** |
-| `cache/` | **Gerada pelo preparador, ignorada pelo Git** |
+| `F1` a `F5` | Mapas, imagens, atlas, configurações, animações |
+| `↑` / `↓` e clique | Selecionar um arquivo na lista lateral (F2–F5) |
+| Digitar / `Esc` | Filtrar ou limpar a lista (F2–F5) |
+| `WASD` e roda do mouse | Câmara e zoom na inspeção de mapas |
+| `[` / `]` | Trocar sprite na aba de atlas F3 |
+| `Espaço` | Pausar/continuar prévia F5 |
+| `←` / `→` | Voltar/avançar um quadro F5 (pausa automaticamente) |
+| `Tab` / `Shift+Tab` | Trocar de movimento F5 |
 
-## Plano de reconstrução 1:1
+## Estrutura
 
-1. **Recursos:** ✓ atlas `.bplist` (geometria dos sprites). Próximos: animações `.bexportjson`, modelos `.c3b`, áudio FMOD e formatos de cenas.
-2. **Regras:** estudar `configdata/`, código nativo (`libcocos2dcpp.so`) e comportamento observável para inferir entidades, controle, combates e progressão. Registrar lacunas sem preencher com invenções.
-3. **Jogo local:** portar motor 2D/3D aplicável, física, habilidades e cenas reais; testes comparativos por versão.
-4. **Conectividade:** avaliar dependências dos serviços antigos e alternativas próprias, sem alegar compatibilidade online sem provas.
+| Diretório/arquivo | Papel |
+|---|---|
+| `tools/extrair_barbarq.py` | Extrai recursos do VISPACK |
+| `tools/bplist.py` | Decodifica atlas `.bplist` com validação de limites |
+| `tools/bexport.py` | Decodifica animações `.bexportjson` sem executar dados externos |
+| `tools/preparar_recursos.py` | Converte mapas, atlas e animações para cache Lua local |
+| `src/animation_view.lua` | Inspeção experimental de poses e keyframes |
+| `main.lua`, `conf.lua` | Interface LÖVE2D |
+| `tests/` | Testes Python; casos malformados e integração opcional |
+| `assets_original/` | Recursos locais do APK; **ignorado pelo Git** |
+| `cache/` | Dados locais gerados; **ignorado pelo Git** |
 
-### Limitações importantes
-
-A extração bem-sucedida do conteúdo de um APK **não** equivale à recuperação do código-fonte. Nomes, dados e imagens são pistas, não evidência de que a regra ou o mapa está completo ou ativo na versão analisada. **Arquivos originais e demais direitos continuam pertencendo a seus titulares**; a extração deve ser feita localmente a partir do seu APK, sem publicá-los neste repositório.
-
-## Verificações da fase 3
+## Auditoria da Fase 4
 
 ```powershell
 py -m unittest discover -s tests -v
 py tools/preparar_recursos.py --assets assets_original --out cache
 ```
 
-Validação local com este APK: 171/171 `.bplist` lidos; 13.680 frames binários dentro dos limites declarados dos atlas; 32 mapas TMX; uma textura de atlas (`role_display0.png`) não estava no APK extraído, e é marcada como ausente. Os testes de interface LÖVE/Windows exigem execução pelo usuário: **não foram validados graficamente aqui**.
+Os **9 testes Python passaram**, inclusive a validação de todos os 1.079 arquivos binários e dos atlas do APK fornecido. A sintaxe dos arquivos Lua é verificada separadamente. **Ainda não houve teste visual no LÖVE2D/Windows neste ambiente**, então é necessário validar as prévias na execução real antes de declarar fidelidade gráfica.
+
+## Próximas frentes
+
+1. Confirmar layout e transformações de ossos (Cocos Studio), índices alternativos de displays, z-order, interpolação, curvas e taxa real de reprodução.
+2. Decodificar cenas `.csb`, modelos `.c3b` e informações de configuração pertinentes à jogabilidade.
+3. Reconstruir a movimentação, entidades, física e combate com testes de referência 1:1.
+4. Investigar e, se viável, substituir serviços de rede por uma infraestrutura independente.
+
+Este repositório público distribui somente o código-fonte da investigação. **Não publica** o APK, texturas, áudio, modelos ou outros recursos protegidos do jogo. Use sua própria cópia autorizada do APK para extrair os arquivos localmente.
