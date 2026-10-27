@@ -17,11 +17,13 @@ import zlib
 
 try:
     from bplist import BPlistError, decode_file
+    from bexport import BExportError, parse_file
 except ModuleNotFoundError:
     # Carregamento por importlib.spec_from_file_location em testes externos.
     import sys
     sys.path.insert(0, str(Path(__file__).resolve().parent))
     from bplist import BPlistError, decode_file
+    from bexport import BExportError, parse_file
 
 NUMBERS = re.compile(r"-?\d+")
 
@@ -208,6 +210,17 @@ def prepare(assets: Path, output: Path) -> dict:
             if frame["x"] + frame["w"] > image_w or frame["y"] + frame["h"] > image_h:
                 raise BPlistError(f"Sprite fora da textura: {atlas['path']} {frame['name']}")
         atlases.append(atlas)
+    # Os dados de animação são exportados para cache local. Cada keyframe é
+    # originalmente armazenado em FlatBuffers; não há reconstrução de combate.
+    animations = []
+    for path in sorted(assets.rglob("*.bexportjson")):
+        entry = parse_file(path, include_frames=True)
+        entry["path"] = path.relative_to(assets).as_posix()
+        entry["name"] = path.stem
+        animations.append(entry)
+    (output / "animations.lua").write_text(
+        "-- Gerado localmente do APK; dados de keyframes, NAO portabilidade completa.\nreturn "
+        + lua(animations) + "\n", encoding="utf-8")
     (output / "maps.lua").write_text("-- Gerado localmente a partir do APK; não versionar.\nreturn " + lua(maps) + "\n", encoding="utf-8")
     (output / "atlases.lua").write_text("-- Gerado localmente a partir do APK; não versionar.\nreturn " + lua(atlases) + "\n", encoding="utf-8")
     stats = {"maps": len(maps), "tile_layers": sum(len(m["layers"]) for m in maps),
@@ -216,7 +229,12 @@ def prepare(assets: Path, output: Path) -> dict:
              "atlases_bplist": sum(a["kind"] == "bplist FlatBuffers" for a in atlases),
              "sprites_bplist": sum(len(a["frames"]) for a in atlases if a["kind"] == "bplist FlatBuffers"),
              "atlas_sprites_total": sum(len(a["frames"]) for a in atlases),
-             "atlases_missing_textures": sum(bool(a.get("missing_image")) for a in atlases)}
+             "atlases_missing_textures": sum(bool(a.get("missing_image")) for a in atlases),
+             "animation_files": len(animations),
+             "armatures": sum(len(a["armatures"]) for a in animations),
+             "movements": sum(len(m["movements"]) for a in animations for m in a["animations"]),
+             "animation_bone_tracks": sum(len(mov["tracks"]) for a in animations for an in a["animations"] for mov in an["movements"]),
+             "animation_keyframes": sum(sum(t["key_count"] for t in mov["tracks"]) for a in animations for an in a["animations"] for mov in an["movements"])}
     (output / "summary.json").write_text(json.dumps(stats, indent=2), encoding="utf-8")
     return stats
 
@@ -229,7 +247,7 @@ def main():
     try:
         print(json.dumps(prepare(args.assets, args.out), ensure_ascii=False, indent=2))
         return 0
-    except (ValueError, FileNotFoundError, OSError, ET.ParseError, plistlib.InvalidFileException, BPlistError) as exc:
+    except (ValueError, FileNotFoundError, OSError, ET.ParseError, plistlib.InvalidFileException, BPlistError, BExportError) as exc:
         parser.exit(1, f"Erro de preparação: {exc}\n")
 
 if __name__ == "__main__":
