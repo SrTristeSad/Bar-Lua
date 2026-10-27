@@ -1,11 +1,13 @@
 -- Bar-Lua | laboratório de engenharia reversa do BarbarQ 1.0.1811.
 -- NÃO é o jogo: apenas visualização fiel de dados originais decodificados.
-local modes = {"Mapas TMX", "Imagens", "Atlas .plist/.bplist", "Configurações", "Animações"}
+local modes = {"Mapas TMX", "Imagens", "Atlas .plist/.bplist", "Configurações", "Animações", "Cenas .csb"}
 local animationView = require("src.animation_view")
+local sceneView = require("src.scene_view")
 local spriteGeometry = require("src.sprite_geometry")
 local mode, selected, search, zoom = 1, 1, "", 1
-local lists = {{}, {}, {}, {}, {}}
-local maps, atlases, animations = {}, {}, {}
+local lists = {{}, {}, {}, {}, {}, {}}
+local maps, atlases, animations, scenes = {}, {}, {}, {}
+local imageIndex = {}
 local textures, quads = {}, {}
 local position = {x = 0, y = 0}
 local frameIndex = 1
@@ -48,6 +50,7 @@ local function setMode(index)
     position.x, position.y = 0, 0
     resetImage()
     animationView.reset()
+    sceneView.reset()
 end
 
 local function visibleList()
@@ -104,10 +107,11 @@ local function drawShell(w, h, list)
     background(0, 0, w, h, {0.06, 0.08, 0.11})
     background(0, 0, w, TOP, {0.12, 0.16, 0.20})
     put("Bar-Lua  •  BarbarQ 1.0.1811  •  pesquisa, NÃO jogável", 14, 10, {1, 1, 1}, titlefont)
+    local tabwidth = (w - 28) / #modes
     for i, name in ipairs(modes) do
-        local x = 14 + (i - 1) * 155
-        if i == mode then background(x - 3, 49, 145, 31, {0.28, 0.37, 0.46}) end
-        put("F" .. i .. "  " .. name, x, 55, {0.94, 0.94, 1}, small)
+        local x = 14 + (i - 1) * tabwidth
+        if i == mode then background(x - 3, 49, tabwidth - 6, 31, {0.28, 0.37, 0.46}) end
+        put("F" .. i .. " " .. name, x, 55, {0.94, 0.94, 1}, small)
     end
     background(0, TOP, SIDE, h - TOP, {0.10, 0.13, 0.17})
     put("Filtrar: " .. search .. "_", 12, TOP + 10, {1, 0.82, 0.44}, small)
@@ -124,7 +128,7 @@ local function drawShell(w, h, list)
         put(label, 13, y, i == selected and {1, 1, 1} or {0.74, 0.80, 0.84}, small)
     end
     background(0, h - BOTTOM, w, BOTTOM, {0.12, 0.16, 0.20})
-    put("↑↓: selecionar  •  [ ]: sprite  •  F1–F5: painel  •  Esc: limpar", 13, h - BOTTOM + 7, {0.85, 0.90, 0.96}, small)
+    put("↑↓: selecionar  •  [ ]: sprite  •  F1–F6: painel  •  Esc: limpar", 13, h - BOTTOM + 7, {0.85, 0.90, 0.96}, small)
     put(status, 13, h - BOTTOM + 29, {0.72, 0.80, 0.87}, small)
 end
 
@@ -329,17 +333,22 @@ function love.load()
     maps = readLua("cache/maps.lua")
     atlases = readLua("cache/atlases.lua")
     animations = readLua("cache/animations.lua")
+    scenes = readLua("cache/scenes.lua")
     for _, map in ipairs(maps) do lists[1][#lists[1]+1] = map end
     scan("assets_original", {png = true, jpg = true, jpeg = true}, lists[2])
     for _, atlas in ipairs(atlases) do lists[3][#lists[3]+1] = atlas end
     scan("assets_original/configdata", {txt = true}, lists[4])
     for _, entry in ipairs(animations) do lists[5][#lists[5]+1] = entry end
+    for _, entry in ipairs(scenes) do lists[6][#lists[6]+1] = entry end
+    for _, path in ipairs(lists[2]) do
+        imageIndex[path:gsub("^assets_original/", ""):lower()] = path:gsub("^assets_original/", "")
+    end
     table.sort(lists[2]); table.sort(lists[4])
     if #maps == 0 then
         status = "Execute o extrator do APK e o preparador Python conforme README."
     else
-        status = string.format("Recursos locais: %d mapas, %d imagens, %d atlas, %d configs, %d animações.",
-            #maps, #lists[2], #atlases, #lists[4], #animations)
+        status = string.format("Recursos: %d mapas, %d imagens, %d atlas, %d configs, %d animações, %d cenas CSB.",
+            #maps, #lists[2], #atlases, #lists[4], #animations, #scenes)
         for i, item in ipairs(maps) do if item.name == "petisland_01" then selected = i; break end end
         local map = activeMap()
         if map then position.x = map.width * map.tilewidth / 2; position.y = map.height * map.tileheight / 2 end
@@ -373,6 +382,14 @@ function love.draw()
         animationView.draw(item, atlases, {x = x, y = y, w = pw, h = ph,
             put = put, background = background, imageFor = imageFor,
             spriteQuad = spriteQuad, small = small})
+    elseif mode == 6 and item then
+        sceneView.draw(item, {x=x, y=y, w=pw, h=ph,
+            put=put, background=background, small=small,
+            resolveImage=function(path, kind)
+                if kind ~= 0 then return nil end
+                local match = imageIndex[path:gsub("\\", "/"):lower()]
+                return match and imageFor(match) or nil
+            end})
     else
         local message = (mode == 1 or mode == 3) and "Sem dados preparados. Execute tools/preparar_recursos.py." or "Nenhum recurso encontrado. Extraia o APK para assets_original."
         put(message, x + 18, y + 40)
@@ -380,9 +397,14 @@ function love.draw()
 end
 
 function love.keypressed(key)
-    local n = key:match("^f([1-5])$")
+    local n = key:match("^f([1-6])$")
     if n then setMode(tonumber(n)); return end
     local list = visibleList()
+    if mode == 6 then
+        if key == "tab" then sceneView.next(selectedItem(), love.keyboard.isDown("lshift", "rshift") and -1 or 1); return end
+        if key == "g" then sceneView.toggleGuides(); return end
+        if key == "v" then sceneView.toggleHidden(); return end
+    end
     if mode == 5 then
         if key == "space" then animationView.toggle(); return end
         if key == "i" then animationView.toggleInterpolate(); return end
@@ -414,13 +436,15 @@ function love.keypressed(key)
     end
     if mode ~= 1 then resetImage() end
     if mode == 5 then animationView.reset() end
+    if mode == 6 then sceneView.reset() end
 end
 
 function love.textinput(text)
     -- WASD no mapa é controle da câmera, não texto de busca.
     if mode == 3 and (text == "[" or text == "]") then return end
     if mode == 5 and (text:lower() == "i" or text:lower() == "b" or text:lower() == "p") then return end
-    if mode ~= 1 and #search < 80 and text:match("%g") then search = search .. text; selected = 1; resetImage(); if mode == 5 then animationView.reset() end end
+    if mode == 6 and (text:lower() == "g" or text:lower() == "v") then return end
+    if mode ~= 1 and #search < 80 and text:match("%g") then search = search .. text; selected = 1; resetImage(); if mode == 5 then animationView.reset() end; if mode == 6 then sceneView.reset() end end
 end
 
 function love.wheelmoved(_, dy)
@@ -453,6 +477,7 @@ function love.mousepressed(x, y, button)
         selected = idx
         resetImage()
         if mode == 5 then animationView.reset() end
+        if mode == 6 then sceneView.reset() end
         local map = activeMap()
         if map then position.x, position.y = map.width * map.tilewidth / 2, map.height * map.tileheight / 2 end
     end
