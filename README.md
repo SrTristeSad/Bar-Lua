@@ -2,9 +2,13 @@
 
 **Objetivo:** estudar um APK original do BarbarQ e reproduzir sua experiência no PC com **Lua e LÖVE2D**, sem emulador Android. Isto **não** é um jogo inspirado no BarbarQ. Os recursos recuperados servem de referência, mas portar a lógica original exige engenharia reversa adicional.
 
-## Estado atual — Fase 9: recursos de atlas nas cenas CSB
+## Estado atual — Fase 10: subcenas e estados reais de botões
 
 O projeto ainda é **um laboratório de visualização; não é uma versão jogável**.
+
+- **Fase 10 — subcenas:** o CSB declara 1.005 nós `ProjectNode`; 985 apontam para cenas que estão presentes no próprio APK e 20 não contêm nome válido. A aba F6 permite selecionar um `ProjectNode` e pressionar `Enter` para inspecionar a cena referenciada, e `Backspace` para retornar. Há bloqueio de ciclos, caminhos inválidos, ambiguidades e profundidade acima de 16. Isto **não** corresponde à navegação real do jogador entre menus; são referências de composição de cena.
+- **Fase 10 — botões:** recuperadas 2.313 imagens de estado normal, 612 de estado pressionado e 956 de estado desabilitado dos 2.909 botões encontrados. `H` alterna somente os estados declarados para o botão selecionado, como ferramenta de inspeção visual; não executa cliques ou callbacks do jogo. Quatro nós em toda a coleção apresentam callback textual `Click`, insuficiente para reconstruir a lógica.
+- **Auditoria:** `cache/summary.json` registra contagens de cenas, referências, skins e callbacks. O parser original continua defensivo contra referências malformadas.
 
 - **VISPACK:** extrator de arquivos do APK 1.0.1811 (ARM64).
 - **Cenas Cocos Studio:** 560 arquivos `.csb` FlatBuffers decodificados, com 26.612 nós de interface recuperados, incluindo 6.820 `ImageView`, 6.099 `Text`, 5.449 `Panel` e 2.909 `Button`. Nomes, caminhos de imagem, `actionTag`, posições, escalas, âncoras, dimensões e hierarquia são convertidos para `cache/scenes.lua`.
@@ -51,6 +55,12 @@ O projeto ainda é **um laboratório de visualização; não é uma versão jog�
 - **Aba F6:** desenha subtexturas com tamanho original e deslocamentos dos recortes, respeita opacidade herdada, oferece picking por clique e anotações textuais de depuração alternáveis (`T`). Menus ainda não são jogáveis; clicar seleciona componentes para inspeção, não aciona botões do BarbarQ.
 - **Limitações:** layout responsivo, widgets `scale9`, fonts e eventos originais, ações, blending e renderização Cocos completa não estão implementados. As propriedades de `skew` são aproximadas e exigem comparação com capturas reais. Nenhum teste gráfico no Windows foi executado neste ambiente.
 
+## Validação da Fase 10
+
+Executado `python -m unittest discover -s tests -v`: **22 testes, sem falhas; 5 testes de integração antigos ficaram opcionais/skipped** por esperarem outro layout de diretórios. O novo teste audita os 560 CSBs reais, suas referências e os estados dos botões. `luatex --luaonly` cobre a navegação, ciclos, ida/volta e troca de skins. Cache regenerado e arquivos ZIP verificados. O teste gráfico real do LÖVE2D no Windows **ainda precisa ser feito**.
+
+A maior parte da lógica de clique e de navegação do BarbarQ não está codificada nos CSB. Não há garantia de que um `ProjectNode` seja uma tela acessível por botão; ele pode representar apenas um fragmento visual reutilizado. A versão 1:1 exigirá engenharia reversa da biblioteca nativa original, validação de eventos e comparação em execução.
+
 ## Rodar o visualizador no Windows
 
 Requisitos: [LÖVE2D 11.x](https://love2d.org/) e Python 3.10+.
@@ -81,6 +91,9 @@ Os ZIPs de teste **com recursos** já incluem `assets_original/` e `cache/`, ent
 | `Tab` / `Shift+Tab` | Navegar entre nós da cena F6 |
 | `G` / `V` | Alternar guias / nós ocultos na cena F6 |
 | `T` / clique na cena | Mostrar/ocultar textos de referência / selecionar nó da cena F6 |
+| `Enter` em ProjectNode | Abrir a cena `.csb` referenciada, somente para inspeção |
+| `Backspace` em subcena | Retornar à cena anterior sem perder o nó selecionado |
+| `H` em botão | Alternar entre imagens de estados declarados no CSB |
 
 ## Estrutura
 
@@ -93,6 +106,7 @@ Os ZIPs de teste **com recursos** já incluem `assets_original/` e `cache/`, ent
 | `src/scene_view.lua` | Visualizador F6 de hierarquias, recortes e seleção |
 | `src/scene_resources.lua` | Resolver de recursos das cenas para atlas ou PNGs avulsos |
 | `src/scene_layout.lua` | Matrizes de hierarquia 2D, ordem z e picking |
+| `src/scene_links.lua` | Resolução exata de referências ProjectNode com proteção contra caminhos ambíguos |
 | `tools/preparar_recursos.py` | Converte mapas, atlas e animações para cache Lua local |
 | `src/animation_view.lua` | Visualizador F5 de poses, seleção de displays e sobreposição |
 | `src/sprite_resolver.lua` | Resolução contextual de nomes de sprites e prevenção de colisões |
