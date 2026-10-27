@@ -3,7 +3,8 @@
 -- bone[5]; pivôs, easing e blending ainda aguardam validação visual.
 local pose = require("src.pose")
 local spriteResolver = require("src.sprite_resolver")
-local M = {movement = 1, time = 0, running = true, interpolate = true, useBind = true}
+local geometry = require("src.sprite_geometry")
+local M = {movement = 1, time = 0, running = true, interpolate = true, useBind = true, guides = false}
 local spriteLookup
 local lastAnimation
 
@@ -49,6 +50,10 @@ function M.toggleBind()
     M.useBind = not M.useBind
 end
 
+function M.toggleGuides()
+    M.guides = not M.guides
+end
+
 function M.step(asset, delta)
     local item = active(asset)
     if item then
@@ -67,9 +72,7 @@ end
 
 local function spriteBox(matrix, f)
     -- Bounding box calculada com a transformação afim, incluindo skew.
-    local ox, oy = f.offset_x or 0, f.offset_y or 0
-    local x1, y1 = -f.w / 2 + ox, -f.h / 2 + oy
-    local x2, y2 = x1 + f.w, y1 + f.h
+    local x1, y1, x2, y2 = geometry.bounds(f)
     local minx, maxx, miny, maxy = math.huge, -math.huge, math.huge, -math.huge
     for _, p in ipairs({{x1,y1},{x1,y2},{x2,y1},{x2,y2}}) do
         local tx, ty = pose.apply(matrix, p[1], p[2])
@@ -93,7 +96,8 @@ function M.draw(asset, atlases, ctx)
     end
     local movement = selected.data
     local duration = math.max(1, movement.duration)
-    local frameIndex = math.floor(M.time) % duration
+    local timeline = M.time % duration
+    local frameIndex = math.floor(timeline)
     local ntracks = #movement.tracks
     put(string.format("Movimento %d/%d: %s", M.movement, #moves, selected.name),
         x + 12, y + 38, {1, 1, 1}, ctx.small)
@@ -110,7 +114,7 @@ function M.draw(asset, atlases, ctx)
     -- Os nomes das armaduras observadas no APK podem divergir de nomes
     -- de animações; a seleção da primeira armadura continua provisória.
     local armature = asset.armatures and asset.armatures[1]
-    local nodes = pose.ordered(pose.evaluate(armature, movement, frameIndex,
+    local nodes = pose.ordered(pose.evaluate(armature, movement, timeline,
         M.interpolate, M.useBind))
     for _, node in ipairs(nodes) do
         local display = node.display_index
@@ -119,7 +123,7 @@ function M.draw(asset, atlases, ctx)
         local sprite = name and spriteResolver.find(spriteLookup, asset, name)
         if display == -1 then
             hidden = hidden + 1
-        elseif sprite and not sprite.frame.rotated then
+        elseif sprite then
             local image = ctx.imageFor(sprite.atlas.image)
             if image then
                 local quad = ctx.spriteQuad(sprite.atlas, sprite.frame, image)
@@ -156,8 +160,19 @@ function M.draw(asset, atlases, ctx)
             transform:setMatrix(m.a, m.b, m.c, m.d, m.tx, m.ty)
             love.graphics.applyTransform(transform)
             love.graphics.setColor(1, 1, 1)
-            love.graphics.draw(item.image, item.quad,
-                -f.w / 2 + (f.offset_x or 0), -f.h / 2 + (f.offset_y or 0))
+            geometry.draw(item.image, item.quad, f)
+            if M.guides then
+                love.graphics.setLineWidth(1 / scale)
+                local left, bottom, right, top = geometry.bounds(f)
+                love.graphics.setColor(0.12, 0.98, 0.62, 0.7)
+                love.graphics.rectangle("line", left, bottom, right - left, top - bottom)
+                local sx, sy, ex, ey = geometry.sourceBounds(f)
+                love.graphics.setColor(1, 0.77, 0.17, 0.7)
+                love.graphics.rectangle("line", sx, sy, ex - sx, ey - sy)
+                love.graphics.setColor(0.99, 0.37, 0.37, 1)
+                love.graphics.line(-5, 0, 5, 0)
+                love.graphics.line(0, -5, 0, 5)
+            end
             love.graphics.pop()
         end
         love.graphics.setScissor()
@@ -168,10 +183,10 @@ function M.draw(asset, atlases, ctx)
     local barx, bary, barw = x + 15, y + h - 74, math.max(1, w - 30)
     background(barx, bary, barw, 13, {0.28, 0.35, 0.41})
     love.graphics.setColor(1, 0.80, 0.31)
-    love.graphics.rectangle("fill", barx, bary, (frameIndex / duration) * barw, 13)
+    love.graphics.rectangle("fill", barx, bary, (timeline / duration) * barw, 13)
     put("Espaço: pausa  •  ← →: quadro  •  Tab: movimento", x + 12,
         y + h - 44, {0.82, 0.90, 0.94}, ctx.small)
-    put("I: interpolação  •  B: pose-base  •  30 quadros/s (não validado)", x + 12,
+    put("I: interpolação  •  B: pose-base  •  P: guias  •  30 fps (hipótese)", x + 12,
         y + h - 23, {0.65, 0.76, 0.83}, ctx.small)
 end
 
