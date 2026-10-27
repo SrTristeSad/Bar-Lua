@@ -1,0 +1,905 @@
+{
+  "source": "ELF AArch64 .text; disassembly static llvm-objdump; direct calls only",
+  "sha256_libcocos2dcpp": "8199604d199b57ebe329725c9a624b85517f495f78c1dad745449684750e4677",
+  "limitations": "Chamada direta não comprova que foi executada; BLR/vtables e inlining não identificados; parâmetros e algoritmos não recuperados.",
+  "functions": [
+    {
+      "signature": "Hero::setStickDir(int)",
+      "address": "0xe5983c",
+      "bytes": 8,
+      "instruction_count": 2,
+      "branch_instructions": 0,
+      "comparisons": 0,
+      "returns": 1,
+      "indirect_calls": 0,
+      "direct_calls": 0,
+      "targets": []
+    },
+    {
+      "signature": "Hero::move_update(float)",
+      "address": "0xe585a8",
+      "bytes": 240,
+      "instruction_count": 60,
+      "branch_instructions": 7,
+      "comparisons": 0,
+      "returns": 0,
+      "indirect_calls": 0,
+      "direct_calls": 5,
+      "targets": [
+        {
+          "address": "0xc55980",
+          "target": "_ZN14WildsMathUtils6cosDegEf@plt",
+          "count": 2,
+          "external_plt": true,
+          "display": "WildsMathUtils::cosDeg(float)@plt"
+        },
+        {
+          "address": "0xc610f0",
+          "target": "_ZN14WildsMathUtils6sinDegEf@plt",
+          "count": 2,
+          "external_plt": true,
+          "display": "WildsMathUtils::sinDeg(float)@plt"
+        },
+        {
+          "address": "0xc35eb0",
+          "target": "_ZN4Hero16getMoveDirectionEv@plt",
+          "count": 1,
+          "external_plt": true,
+          "display": "Hero::getMoveDirection()@plt"
+        }
+      ]
+    },
+    {
+      "signature": "Hero::update(float)",
+      "address": "0xe58e84",
+      "bytes": 900,
+      "instruction_count": 225,
+      "branch_instructions": 26,
+      "comparisons": 16,
+      "returns": 1,
+      "indirect_calls": 8,
+      "direct_calls": 18,
+      "targets": [
+        {
+          "address": "0xc5d350",
+          "target": "_ZN13BattleManager8InstanceEv@plt",
+          "count": 5,
+          "external_plt": true,
+          "display": "BattleManager::Instance()@plt"
+        },
+        {
+          "address": "0xc4ded0",
+          "target": "_ZN13LogicEventSet9FireEventERK14LogicEventArgsb@plt",
+          "count": 2,
+          "external_plt": true,
+          "display": "LogicEventSet::FireEvent(LogicEventArgs const&, bool)@plt"
+        },
+        {
+          "address": "0xc55c60",
+          "target": "_ZdlPv@plt",
+          "count": 2,
+          "external_plt": true,
+          "display": "operator delete(void*)@plt"
+        },
+        {
+          "address": "0xc5f810",
+          "target": "_Unwind_Resume@plt",
+          "count": 1,
+          "external_plt": true,
+          "display": "_Unwind_Resume@plt"
+        },
+        {
+          "address": "0xc2e2f0",
+          "target": "_ZN4Hero13onRestartGameEv@plt",
+          "count": 1,
+          "external_plt": true,
+          "display": "Hero::onRestartGame()@plt"
+        },
+        {
+          "address": "0xc3da60",
+          "target": "_ZN4Hero15mushroom_updateEf@plt",
+          "count": 1,
+          "external_plt": true,
+          "display": "Hero::mushroom_update(float)@plt"
+        },
+        {
+          "address": "0xc34ee0",
+          "target": "_ZN6CSkill26CreateSkillBySkillConfigIdEP6EntityiPKNSt3__16vectorI12CSkillEntityNS2_9allocatorIS4_EEEEi@plt",
+          "count": 1,
+          "external_plt": true,
+          "display": "CSkill::CreateSkillBySkillConfigId(Entity*, int, std::__1::vector<CSkillEntity, std::__1::allocator<CSkillEntity> > const*, int)@plt"
+        },
+        {
+          "address": "0xc6a690",
+          "target": "_ZN6Entity8addSkillEP6CSkillb@plt",
+          "count": 1,
+          "external_plt": true,
+          "display": "Entity::addSkill(CSkill*, bool)@plt"
+        },
+        {
+          "address": "0xc3f510",
+          "target": "_ZNK15SParseValueInfo8GetValueEPK6Entity@plt",
+          "count": 1,
+          "external_plt": true,
+          "display": "SParseValueInfo::GetValue(Entity const*) const@plt"
+        },
+        {
+          "address": "0xc2eba0",
+          "target": "_ZNK17PlayerInfoManager16getPlayInfoByKeyEi@plt",
+          "count": 1,
+          "external_plt": true,
+          "display": "PlayerInfoManager::getPlayInfoByKey(int) const@plt"
+        },
+        {
+          "address": "0xc51350",
+          "target": "_ZNK8SMapInfo13GetParseValueERKNSt3__112basic_stringIcNS0_11char_traitsIcEENS0_9allocatorIcEEEE@plt",
+          "count": 1,
+          "external_plt": true,
+          "display": "SMapInfo::GetParseValue(std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char> > const&) const@plt"
+        },
+        {
+          "address": "0xc56380",
+          "target": "__stack_chk_fail@plt",
+          "count": 1,
+          "external_plt": true,
+          "display": "__stack_chk_fail@plt"
+        }
+      ]
+    },
+    {
+      "signature": "GameScene::updateStick()",
+      "address": "0xeb7358",
+      "bytes": 420,
+      "instruction_count": 105,
+      "branch_instructions": 13,
+      "comparisons": 10,
+      "returns": 1,
+      "indirect_calls": 0,
+      "direct_calls": 6,
+      "targets": [
+        {
+          "address": "0xc5f810",
+          "target": "_Unwind_Resume@plt",
+          "count": 1,
+          "external_plt": true,
+          "display": "_Unwind_Resume@plt"
+        },
+        {
+          "address": "0xc39890",
+          "target": "_ZN3pto6battle30COperateMessage__ThumbnailMoveC1Ev@plt",
+          "count": 1,
+          "external_plt": true,
+          "display": "pto::battle::COperateMessage__ThumbnailMove::COperateMessage__ThumbnailMove()@plt"
+        },
+        {
+          "address": "0xc5f6d0",
+          "target": "_ZN9BattleNet7SendCmdIN3pto6battle30COperateMessage__ThumbnailMoveEEEvPT_b@plt",
+          "count": 1,
+          "external_plt": true,
+          "display": "void BattleNet::SendCmd<pto::battle::COperateMessage__ThumbnailMove>(pto::battle::COperateMessage__ThumbnailMove*, bool)@plt"
+        },
+        {
+          "address": "0xc2e5e0",
+          "target": "_ZN9BattleNet8InstanceEv@plt",
+          "count": 1,
+          "external_plt": true,
+          "display": "BattleNet::Instance()@plt"
+        },
+        {
+          "address": "0xc55c60",
+          "target": "_ZdlPv@plt",
+          "count": 1,
+          "external_plt": true,
+          "display": "operator delete(void*)@plt"
+        },
+        {
+          "address": "0xc532e0",
+          "target": "_Znwm@plt",
+          "count": 1,
+          "external_plt": true,
+          "display": "operator new(unsigned long)@plt"
+        }
+      ]
+    },
+    {
+      "signature": "GameScene::updateLogicFrame(float)",
+      "address": "0xeb7bcc",
+      "bytes": 2024,
+      "instruction_count": 506,
+      "branch_instructions": 64,
+      "comparisons": 28,
+      "returns": 1,
+      "indirect_calls": 1,
+      "direct_calls": 97,
+      "targets": [
+        {
+          "address": "0xc2e5e0",
+          "target": "_ZN9BattleNet8InstanceEv@plt",
+          "count": 15,
+          "external_plt": true,
+          "display": "BattleNet::Instance()@plt"
+        },
+        {
+          "address": "0xc532e0",
+          "target": "_Znwm@plt",
+          "count": 13,
+          "external_plt": true,
+          "display": "operator new(unsigned long)@plt"
+        },
+        {
+          "address": "0xc610d0",
+          "target": "_ZN15SpectatorSystemC1Ev@plt",
+          "count": 7,
+          "external_plt": true,
+          "display": "SpectatorSystem::SpectatorSystem()@plt"
+        },
+        {
+          "address": "0xc5f810",
+          "target": "_Unwind_Resume@plt",
+          "count": 5,
+          "external_plt": true,
+          "display": "_Unwind_Resume@plt"
+        },
+        {
+          "address": "0xc5d350",
+          "target": "_ZN13BattleManager8InstanceEv@plt",
+          "count": 5,
+          "external_plt": true,
+          "display": "BattleManager::Instance()@plt"
+        },
+        {
+          "address": "0xc63fb0",
+          "target": "_ZN12ReplaySystemC1Ev@plt",
+          "count": 4,
+          "external_plt": true,
+          "display": "ReplaySystem::ReplaySystem()@plt"
+        },
+        {
+          "address": "0xc4d2e0",
+          "target": "_ZN9BattleNet14FetchProtocolsERNSt3__16vectorIN3tms3net10PtoWatcher7PtoUnitENS0_9allocatorIS5_EEEE@plt",
+          "count": 4,
+          "external_plt": true,
+          "display": "BattleNet::FetchProtocols(std::__1::vector<tms::net::PtoWatcher::PtoUnit, std::__1::allocator<tms::net::PtoWatcher::PtoUnit> >&)@plt"
+        },
+        {
+          "address": "0xc55c60",
+          "target": "_ZdlPv@plt",
+          "count": 4,
+          "external_plt": true,
+          "display": "operator delete(void*)@plt"
+        },
+        {
+          "address": "0xc570f0",
+          "target": "_ZN6UPSMgr11getInstanceEv@plt",
+          "count": 3,
+          "external_plt": true,
+          "display": "UPSMgr::getInstance()@plt"
+        },
+        {
+          "address": "0xc2d310",
+          "target": "_ZN9BattleNet10UpdatePingEv@plt",
+          "count": 2,
+          "external_plt": true,
+          "display": "BattleNet::UpdatePing()@plt"
+        },
+        {
+          "address": "0xc5fac0",
+          "target": "_ZN9BattleNet24ProcessNonFrameProtocolsEv@plt",
+          "count": 2,
+          "external_plt": true,
+          "display": "BattleNet::ProcessNonFrameProtocols()@plt"
+        },
+        {
+          "address": "0x1e6569c",
+          "target": "__cxa_get_globals_fast+0x15c",
+          "count": 2,
+          "external_plt": false,
+          "display": "__cxa_get_globals_fast+0x15c"
+        },
+        {
+          "address": "0x1e655e8",
+          "target": "__cxa_get_globals_fast+0xa8",
+          "count": 2,
+          "external_plt": false,
+          "display": "__cxa_get_globals_fast+0xa8"
+        },
+        {
+          "address": "0xc56020",
+          "target": "_ZN10MessageTip10CreateTipsERKNSt3__112basic_stringIcNS0_11char_traitsIcEENS0_9allocatorIcEEEE@plt",
+          "count": 1,
+          "external_plt": true,
+          "display": "MessageTip::CreateTips(std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char> > const&)@plt"
+        },
+        {
+          "address": "0xe1bec0",
+          "target": "_ZN11DownloadMgr15DeleteFileByURLERKNSt3__112basic_stringIcNS0_11char_traitsIcEENS0_9allocatorIcEEEE+0x224",
+          "count": 1,
+          "external_plt": false,
+          "display": "DownloadMgr::DeleteFileByURL(std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char> > const&)+0x224"
+        },
+        {
+          "address": "0xc409a0",
+          "target": "_ZN12LoadingLayer6isShowEv@plt",
+          "count": 1,
+          "external_plt": true,
+          "display": "LoadingLayer::isShow()@plt"
+        },
+        {
+          "address": "0xc4dc80",
+          "target": "_ZN12ReplaySystem16GetRunFrameCountEv@plt",
+          "count": 1,
+          "external_plt": true,
+          "display": "ReplaySystem::GetRunFrameCount()@plt"
+        },
+        {
+          "address": "0xc36d30",
+          "target": "_ZN12ReplaySystem8GetFrameEv@plt",
+          "count": 1,
+          "external_plt": true,
+          "display": "ReplaySystem::GetFrame()@plt"
+        },
+        {
+          "address": "0xc69760",
+          "target": "_ZN13BattleManager17updateSingleFrameEv@plt",
+          "count": 1,
+          "external_plt": true,
+          "display": "BattleManager::updateSingleFrame()@plt"
+        },
+        {
+          "address": "0xc4ded0",
+          "target": "_ZN13LogicEventSet9FireEventERK14LogicEventArgsb@plt",
+          "count": 1,
+          "external_plt": true,
+          "display": "LogicEventSet::FireEvent(LogicEventArgs const&, bool)@plt"
+        },
+        {
+          "address": "0xc43640",
+          "target": "_ZN15SpectatorSystem12SetPlaySpeedEf@plt",
+          "count": 1,
+          "external_plt": true,
+          "display": "SpectatorSystem::SetPlaySpeed(float)@plt"
+        },
+        {
+          "address": "0xc4cdd0",
+          "target": "_ZN15SpectatorSystem16GetRunFrameCountEv@plt",
+          "count": 1,
+          "external_plt": true,
+          "display": "SpectatorSystem::GetRunFrameCount()@plt"
+        },
+        {
+          "address": "0xc6ef90",
+          "target": "_ZN3pto4room15SBattleGameOverC1Ev@plt",
+          "count": 1,
+          "external_plt": true,
+          "display": "pto::room::SBattleGameOver::SBattleGameOver()@plt"
+        },
+        {
+          "address": "0xc75400",
+          "target": "_ZN3pto6battle17SFrameUpdate_Impl16default_instanceEv@plt",
+          "count": 1,
+          "external_plt": true,
+          "display": "pto::battle::SFrameUpdate_Impl::default_instance()@plt"
+        },
+        {
+          "address": "0xc453b0",
+          "target": "_ZN3tms3net11ProtocolMap17getProtocolTypeIdEPv@plt",
+          "count": 1,
+          "external_plt": true,
+          "display": "tms::net::ProtocolMap::getProtocolTypeId(void*)@plt"
+        },
+        {
+          "address": "0xc75a60",
+          "target": "_ZN6UPSMgr17setServerRespTimeEi@plt",
+          "count": 1,
+          "external_plt": true,
+          "display": "UPSMgr::setServerRespTime(int)@plt"
+        },
+        {
+          "address": "0xc3f900",
+          "target": "_ZN6UPSMgr6setFPSEi@plt",
+          "count": 1,
+          "external_plt": true,
+          "display": "UPSMgr::setFPS(int)@plt"
+        },
+        {
+          "address": "0xc663e0",
+          "target": "_ZN6UPSMgr7setPingEi@plt",
+          "count": 1,
+          "external_plt": true,
+          "display": "UPSMgr::setPing(int)@plt"
+        },
+        {
+          "address": "0xc58770",
+          "target": "_ZN7SysTime23getTimeSinceBattleStartEv@plt",
+          "count": 1,
+          "external_plt": true,
+          "display": "SysTime::getTimeSinceBattleStart()@plt"
+        },
+        {
+          "address": "0xc48b00",
+          "target": "_ZN7SysTime8InstanceEv@plt",
+          "count": 1,
+          "external_plt": true,
+          "display": "SysTime::Instance()@plt"
+        },
+        {
+          "address": "0xc6b150",
+          "target": "_ZN7cocos2d8Director11getInstanceEv@plt",
+          "count": 1,
+          "external_plt": true,
+          "display": "cocos2d::Director::getInstance()@plt"
+        },
+        {
+          "address": "0xc67e20",
+          "target": "_ZN9BattleNet15processProtocolERKN3tms3net10PtoWatcher7PtoUnitE@plt",
+          "count": 1,
+          "external_plt": true,
+          "display": "BattleNet::processProtocol(tms::net::PtoWatcher::PtoUnit const&)@plt"
+        },
+        {
+          "address": "0xc419b0",
+          "target": "_ZN9BattleNet20ProcessLocalProtocolEv@plt",
+          "count": 1,
+          "external_plt": true,
+          "display": "BattleNet::ProcessLocalProtocol()@plt"
+        },
+        {
+          "address": "0xc3d270",
+          "target": "_ZN9GameScene14ProcessProtcolEv@plt",
+          "count": 1,
+          "external_plt": true,
+          "display": "GameScene::ProcessProtcol()@plt"
+        },
+        {
+          "address": "0xc2dff0",
+          "target": "_ZN9GameScene18processPursueFrameEi@plt",
+          "count": 1,
+          "external_plt": true,
+          "display": "GameScene::processPursueFrame(int)@plt"
+        },
+        {
+          "address": "0xc4e030",
+          "target": "_ZN9GameScene22processSBattleGameOverEPN6google8protobuf11MessageLiteEPN3tms3net10PtoWatcherE@plt",
+          "count": 1,
+          "external_plt": true,
+          "display": "GameScene::processSBattleGameOver(google::protobuf::MessageLite*, tms::net::PtoWatcher*)@plt"
+        },
+        {
+          "address": "0xc67410",
+          "target": "_ZNK16TextConfigLoader11getTextByIDEi@plt",
+          "count": 1,
+          "external_plt": true,
+          "display": "TextConfigLoader::getTextByID(int) const@plt"
+        },
+        {
+          "address": "0xc49b20",
+          "target": "_ZNK9BattleNet11GetPingInMSEv@plt",
+          "count": 1,
+          "external_plt": true,
+          "display": "BattleNet::GetPingInMS() const@plt"
+        },
+        {
+          "address": "0x1e65718",
+          "target": "__cxa_get_globals_fast+0x1d8",
+          "count": 1,
+          "external_plt": false,
+          "display": "__cxa_get_globals_fast+0x1d8"
+        },
+        {
+          "address": "0xc56380",
+          "target": "__stack_chk_fail@plt",
+          "count": 1,
+          "external_plt": true,
+          "display": "__stack_chk_fail@plt"
+        },
+        {
+          "address": "0xc385b0",
+          "target": "memcpy@plt",
+          "count": 1,
+          "external_plt": true,
+          "display": "memcpy@plt"
+        },
+        {
+          "address": "0xc6b440",
+          "target": "strlen@plt",
+          "count": 1,
+          "external_plt": true,
+          "display": "strlen@plt"
+        }
+      ]
+    },
+    {
+      "signature": "GameScene::processPursueFrame(int)",
+      "address": "0xeb8738",
+      "bytes": 532,
+      "instruction_count": 133,
+      "branch_instructions": 17,
+      "comparisons": 7,
+      "returns": 1,
+      "indirect_calls": 0,
+      "direct_calls": 13,
+      "targets": [
+        {
+          "address": "0xc532e0",
+          "target": "_Znwm@plt",
+          "count": 3,
+          "external_plt": true,
+          "display": "operator new(unsigned long)@plt"
+        },
+        {
+          "address": "0xc5f810",
+          "target": "_Unwind_Resume@plt",
+          "count": 1,
+          "external_plt": true,
+          "display": "_Unwind_Resume@plt"
+        },
+        {
+          "address": "0xc4d080",
+          "target": "_ZN12LoadingLayer13updatePercentEf@plt",
+          "count": 1,
+          "external_plt": true,
+          "display": "LoadingLayer::updatePercent(float)@plt"
+        },
+        {
+          "address": "0xc5d580",
+          "target": "_ZN12LoadingLayer4showEv@plt",
+          "count": 1,
+          "external_plt": true,
+          "display": "LoadingLayer::show()@plt"
+        },
+        {
+          "address": "0xc63fb0",
+          "target": "_ZN12ReplaySystemC1Ev@plt",
+          "count": 1,
+          "external_plt": true,
+          "display": "ReplaySystem::ReplaySystem()@plt"
+        },
+        {
+          "address": "0xc610d0",
+          "target": "_ZN15SpectatorSystemC1Ev@plt",
+          "count": 1,
+          "external_plt": true,
+          "display": "SpectatorSystem::SpectatorSystem()@plt"
+        },
+        {
+          "address": "0xc71640",
+          "target": "_ZN3pto6battle32COperateMessage__ResetPurseFrameC1Ev@plt",
+          "count": 1,
+          "external_plt": true,
+          "display": "pto::battle::COperateMessage__ResetPurseFrame::COperateMessage__ResetPurseFrame()@plt"
+        },
+        {
+          "address": "0xc61c80",
+          "target": "_ZN9BattleNet7SendCmdIN3pto6battle32COperateMessage__ResetPurseFrameEEEvPT_b@plt",
+          "count": 1,
+          "external_plt": true,
+          "display": "void BattleNet::SendCmd<pto::battle::COperateMessage__ResetPurseFrame>(pto::battle::COperateMessage__ResetPurseFrame*, bool)@plt"
+        },
+        {
+          "address": "0xc2e5e0",
+          "target": "_ZN9BattleNet8InstanceEv@plt",
+          "count": 1,
+          "external_plt": true,
+          "display": "BattleNet::Instance()@plt"
+        },
+        {
+          "address": "0xc38c90",
+          "target": "_ZN9GameScene16afterPursueFrameEv@plt",
+          "count": 1,
+          "external_plt": true,
+          "display": "GameScene::afterPursueFrame()@plt"
+        },
+        {
+          "address": "0xc55c60",
+          "target": "_ZdlPv@plt",
+          "count": 1,
+          "external_plt": true,
+          "display": "operator delete(void*)@plt"
+        }
+      ]
+    },
+    {
+      "signature": "GameScene::checkFrameFrequency(float)",
+      "address": "0xeb79d0",
+      "bytes": 508,
+      "instruction_count": 127,
+      "branch_instructions": 15,
+      "comparisons": 5,
+      "returns": 1,
+      "indirect_calls": 0,
+      "direct_calls": 14,
+      "targets": [
+        {
+          "address": "0xc2e5e0",
+          "target": "_ZN9BattleNet8InstanceEv@plt",
+          "count": 3,
+          "external_plt": true,
+          "display": "BattleNet::Instance()@plt"
+        },
+        {
+          "address": "0xc532e0",
+          "target": "_Znwm@plt",
+          "count": 3,
+          "external_plt": true,
+          "display": "operator new(unsigned long)@plt"
+        },
+        {
+          "address": "0xc348e0",
+          "target": "_ZN3pto6battle30COperateMessage__SendFrequencyC1Ev@plt",
+          "count": 2,
+          "external_plt": true,
+          "display": "pto::battle::COperateMessage__SendFrequency::COperateMessage__SendFrequency()@plt"
+        },
+        {
+          "address": "0xc6afd0",
+          "target": "_ZN9BattleNet7SendCmdIN3pto6battle30COperateMessage__SendFrequencyEEEvPT_b@plt",
+          "count": 2,
+          "external_plt": true,
+          "display": "void BattleNet::SendCmd<pto::battle::COperateMessage__SendFrequency>(pto::battle::COperateMessage__SendFrequency*, bool)@plt"
+        },
+        {
+          "address": "0xc5f810",
+          "target": "_Unwind_Resume@plt",
+          "count": 1,
+          "external_plt": true,
+          "display": "_Unwind_Resume@plt"
+        },
+        {
+          "address": "0xc610d0",
+          "target": "_ZN15SpectatorSystemC1Ev@plt",
+          "count": 1,
+          "external_plt": true,
+          "display": "SpectatorSystem::SpectatorSystem()@plt"
+        },
+        {
+          "address": "0xc3f720",
+          "target": "_ZNK9BattleNet11IsConnectedEv@plt",
+          "count": 1,
+          "external_plt": true,
+          "display": "BattleNet::IsConnected() const@plt"
+        },
+        {
+          "address": "0xc55c60",
+          "target": "_ZdlPv@plt",
+          "count": 1,
+          "external_plt": true,
+          "display": "operator delete(void*)@plt"
+        }
+      ]
+    },
+    {
+      "signature": "GameScene::afterPursueFrame()",
+      "address": "0xeb6eac",
+      "bytes": 1196,
+      "instruction_count": 299,
+      "branch_instructions": 52,
+      "comparisons": 12,
+      "returns": 1,
+      "indirect_calls": 16,
+      "direct_calls": 23,
+      "targets": [
+        {
+          "address": "0xc55c60",
+          "target": "_ZdlPv@plt",
+          "count": 4,
+          "external_plt": true,
+          "display": "operator delete(void*)@plt"
+        },
+        {
+          "address": "0xc41c60",
+          "target": "_ZN7cocos2d3Ref11autoreleaseEv@plt",
+          "count": 2,
+          "external_plt": true,
+          "display": "cocos2d::Ref::autorelease()@plt"
+        },
+        {
+          "address": "0xc3bcb0",
+          "target": "_ZNK8SMapInfo11GetRoomTypeEv@plt",
+          "count": 2,
+          "external_plt": true,
+          "display": "SMapInfo::GetRoomType() const@plt"
+        },
+        {
+          "address": "0xc302a0",
+          "target": "_ZnwmRKSt9nothrow_t@plt",
+          "count": 2,
+          "external_plt": true,
+          "display": "operator new(unsigned long, std::nothrow_t const&)@plt"
+        },
+        {
+          "address": "0xc67eb0",
+          "target": "__cxa_allocate_exception@plt",
+          "count": 2,
+          "external_plt": true,
+          "display": "__cxa_allocate_exception@plt"
+        },
+        {
+          "address": "0xc6c130",
+          "target": "__cxa_throw@plt",
+          "count": 2,
+          "external_plt": true,
+          "display": "__cxa_throw@plt"
+        },
+        {
+          "address": "0xc5f810",
+          "target": "_Unwind_Resume@plt",
+          "count": 1,
+          "external_plt": true,
+          "display": "_Unwind_Resume@plt"
+        },
+        {
+          "address": "0xc4d080",
+          "target": "_ZN12LoadingLayer13updatePercentEf@plt",
+          "count": 1,
+          "external_plt": true,
+          "display": "LoadingLayer::updatePercent(float)@plt"
+        },
+        {
+          "address": "0xc5d9e0",
+          "target": "_ZN23BattleHUD_FootBallReady4showENSt3__18functionIFvvEEE@plt",
+          "count": 1,
+          "external_plt": true,
+          "display": "BattleHUD_FootBallReady::show(std::__1::function<void ()>)@plt"
+        },
+        {
+          "address": "0xc77330",
+          "target": "_ZN23BattleHUD_FootBallReadyC1Ev@plt",
+          "count": 1,
+          "external_plt": true,
+          "display": "BattleHUD_FootBallReady::BattleHUD_FootBallReady()@plt"
+        },
+        {
+          "address": "0xc59030",
+          "target": "_ZN24BattleHUD_RedPacketReady4showENSt3__18functionIFvvEEE@plt",
+          "count": 1,
+          "external_plt": true,
+          "display": "BattleHUD_RedPacketReady::show(std::__1::function<void ()>)@plt"
+        },
+        {
+          "address": "0xc2afe0",
+          "target": "_ZN24BattleHUD_RedPacketReadyC1Ev@plt",
+          "count": 1,
+          "external_plt": true,
+          "display": "BattleHUD_RedPacketReady::BattleHUD_RedPacketReady()@plt"
+        },
+        {
+          "address": "0xc37580",
+          "target": "_ZNK8SMapInfo10GetMapTypeEv@plt",
+          "count": 1,
+          "external_plt": true,
+          "display": "SMapInfo::GetMapType() const@plt"
+        },
+        {
+          "address": "0xc5ff50",
+          "target": "_ZdlPvRKSt9nothrow_t@plt",
+          "count": 1,
+          "external_plt": true,
+          "display": "operator delete(void*, std::nothrow_t const&)@plt"
+        },
+        {
+          "address": "0xc56380",
+          "target": "__stack_chk_fail@plt",
+          "count": 1,
+          "external_plt": true,
+          "display": "__stack_chk_fail@plt"
+        }
+      ]
+    },
+    {
+      "signature": "BattleNet::processFrameUpdate(pto::battle::SFrameUpdate*)",
+      "address": "0x1439718",
+      "bytes": 472,
+      "instruction_count": 118,
+      "branch_instructions": 17,
+      "comparisons": 6,
+      "returns": 1,
+      "indirect_calls": 1,
+      "direct_calls": 15,
+      "targets": [
+        {
+          "address": "0xc5f810",
+          "target": "_Unwind_Resume@plt",
+          "count": 2,
+          "external_plt": true,
+          "display": "_Unwind_Resume@plt"
+        },
+        {
+          "address": "0xc74e00",
+          "target": "_ZN6google8protobuf8internal20RepeatedPtrFieldBase7ReserveEi@plt",
+          "count": 2,
+          "external_plt": true,
+          "display": "google::protobuf::internal::RepeatedPtrFieldBase::Reserve(int)@plt"
+        },
+        {
+          "address": "0xc37da0",
+          "target": "_ZN3pto6battle12SFrameUpdateC1Ev@plt",
+          "count": 1,
+          "external_plt": true,
+          "display": "pto::battle::SFrameUpdate::SFrameUpdate()@plt"
+        },
+        {
+          "address": "0xc75400",
+          "target": "_ZN3pto6battle17SFrameUpdate_Impl16default_instanceEv@plt",
+          "count": 1,
+          "external_plt": true,
+          "display": "pto::battle::SFrameUpdate_Impl::default_instance()@plt"
+        },
+        {
+          "address": "0xc3f890",
+          "target": "_ZN3tms3net11ProtocolMap14createProtocolEi@plt",
+          "count": 1,
+          "external_plt": true,
+          "display": "tms::net::ProtocolMap::createProtocol(int)@plt"
+        },
+        {
+          "address": "0xc453b0",
+          "target": "_ZN3tms3net11ProtocolMap17getProtocolTypeIdEPv@plt",
+          "count": 1,
+          "external_plt": true,
+          "display": "tms::net::ProtocolMap::getProtocolTypeId(void*)@plt"
+        },
+        {
+          "address": "0xc67e20",
+          "target": "_ZN9BattleNet15processProtocolERKN3tms3net10PtoWatcher7PtoUnitE@plt",
+          "count": 1,
+          "external_plt": true,
+          "display": "BattleNet::processProtocol(tms::net::PtoWatcher::PtoUnit const&)@plt"
+        },
+        {
+          "address": "0xc55c60",
+          "target": "_ZdlPv@plt",
+          "count": 1,
+          "external_plt": true,
+          "display": "operator delete(void*)@plt"
+        },
+        {
+          "address": "0xc532e0",
+          "target": "_Znwm@plt",
+          "count": 1,
+          "external_plt": true,
+          "display": "operator new(unsigned long)@plt"
+        },
+        {
+          "address": "0x1e6569c",
+          "target": "__cxa_get_globals_fast+0x15c",
+          "count": 1,
+          "external_plt": false,
+          "display": "__cxa_get_globals_fast+0x15c"
+        },
+        {
+          "address": "0x1e65718",
+          "target": "__cxa_get_globals_fast+0x1d8",
+          "count": 1,
+          "external_plt": false,
+          "display": "__cxa_get_globals_fast+0x1d8"
+        },
+        {
+          "address": "0x1e655e8",
+          "target": "__cxa_get_globals_fast+0xa8",
+          "count": 1,
+          "external_plt": false,
+          "display": "__cxa_get_globals_fast+0xa8"
+        },
+        {
+          "address": "0xc56380",
+          "target": "__stack_chk_fail@plt",
+          "count": 1,
+          "external_plt": true,
+          "display": "__stack_chk_fail@plt"
+        }
+      ]
+    },
+    {
+      "signature": "CSkill::Update(float)",
+      "address": "0xe65200",
+      "bytes": 4,
+      "instruction_count": 1,
+      "branch_instructions": 0,
+      "comparisons": 0,
+      "returns": 1,
+      "indirect_calls": 0,
+      "direct_calls": 0,
+      "targets": []
+    }
+  ]
+}
