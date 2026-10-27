@@ -18,7 +18,7 @@ class ConverterTests(unittest.TestCase):
         self.assertEqual(prepare.numvec('{{658,740},{80,80}}', 4), [658, 740, 80, 80])
 
     def test_original_apk_when_available(self):
-        original = Path(__file__).resolve().parents[2] / "barbarq_lua_fase1" / "assets_original"
+        original = Path(__file__).resolve().parents[1] / "assets_original"
         if not original.is_dir():
             self.skipTest("APK extraído indisponível (teste de integração opcional)")
         with tempfile.TemporaryDirectory() as folder:
