@@ -7,13 +7,14 @@ local pose = require('src.pose')
 local resolver = require('src.sprite_resolver')
 local geometry = require('src.sprite_geometry')
 local mapObjects = require('src.map_objects')
+local attackPreview = require('src.attack_preview')
 local M = {}
 local state = {world = nil, body = nil, map = nil, hero = nil, lookup = nil,
                running = false, directions = 0, time = 0, cameraX = 0, cameraY = 0,
                collisionDebug = true, ready = false, steps = 0, lastContacts = 0,
                contactCount = 0, textureMisses = 0, error = nil,
                mapObjectFixtures = {}, mapObjectRects = {}, mapCollision = false,
-               showMapObjects = true, mapObjectMessage = nil}
+               showMapObjects = true, mapObjectMessage = nil, attack = nil}
 local ACCUMULATOR_LIMIT, STEP = 0.12, 1/60
 local SPEED_CENTI, PIXELS_PER_METER, RADIUS = 300, 30, 18
 local function validMap(map)
@@ -52,6 +53,7 @@ function M.reset()
     state.mapObjectFixtures = {}; state.mapObjectRects = {}
     state.mapCollision = false; state.showMapObjects = true
     state.mapObjectMessage = nil
+    state.attack = nil
 end
 local function staticBox(world,x,y,w,h)
     local body = love.physics.newBody(world,x,y,'static')
@@ -65,6 +67,7 @@ function M.start(map, hero, atlases)
     if not love.physics then state.error = 'LÖVE2D sem módulo love.physics'; return false end
     if not hero then state.error = 'Animação original babarian ausente'; return false end
     state.map, state.hero = map, hero
+    state.attack = attackPreview.new(hero, 30) -- convenção visual, não comprovada
     state.mapObjectRects = mapObjects.rectangles(map)
     state.lookup = resolver.index(atlases)
     state.cameraX, state.cameraY = map.width*map.tilewidth/2, map.height*map.tileheight/2
@@ -115,6 +118,7 @@ function M.update(dt, keys)
     local nx,ny,moving = M.inputVector(keys('w') or keys('up'),keys('s') or keys('down'),
         keys('a') or keys('left'),keys('d') or keys('right'))
     state.running = moving
+    attackPreview.update(state.attack, dt)
     -- O codec original identifica cálculo trigonométrico e divisão por 100.
     -- 300 centésimos e 30 pixels por metro são calibração do TESTE, não do APK.
     local direction = moving and math.floor(math.deg(math.atan(ny,nx))) or 0
@@ -131,6 +135,18 @@ function M.update(dt, keys)
     end
     state.cameraX,state.cameraY = state.body:getPosition()
     if moving then state.time = state.time + dt*30 else state.time = state.time + dt*30 end
+end
+function M.triggerAttack(number)
+    if not state.ready then return false end
+    local ok=attackPreview.begin(state.attack,number,state.directions)
+    if ok then state.time=0 end
+    return ok
+end
+function M.displayMovement()
+    if not state.ready then return nil end
+    local action, at=attackPreview.sample(state.attack)
+    if action then return action, at, true end
+    return M.movement(state.hero,state.running,state.directions), state.time, false
 end
 function M.playerPosition()
     if not state.ready then return nil end
@@ -181,10 +197,10 @@ function M.draw(panel, camera, context)
     local y=panel.y+(centerY-camera.top)*camera.scale
     love.graphics.setScissor(panel.x,panel.y,panel.w,panel.h)
     local drawn, unresolved = 0, 0
-    local movement = M.movement(state.hero,state.running,state.directions)
+    local movement, animationTime, attacking = M.displayMovement()
     local armature = state.hero.armatures and state.hero.armatures[1]
     if movement and armature then
-        local frame = state.time % movement.duration
+        local frame = attacking and animationTime or (animationTime % movement.duration)
         local nodes = pose.ordered(pose.evaluate(armature,movement,frame,true,true))
         for _,node in ipairs(nodes) do
             local di=node.display_index
@@ -234,11 +250,11 @@ function M.draw(panel, camera, context)
     end
     love.graphics.setScissor()
     put(string.format('F14 TESTE Box2D | mapa: %s | personagem: babarian | %s_%d',
-        state.map.name,state.running and 'walk' or 'stand',state.directions),
+        state.map.name,attacking and 'attack' or (state.running and 'walk' or 'stand'),state.directions),
         panel.x+10,panel.y+38,{1,0.87,0.44},context.small)
     put(string.format('Posição (px): %.1f, %.1f | corpos de teste | contatos: %d',centerX,centerY,state.contactCount),
         panel.x+10,panel.y+60,{1,1,1},context.small)
-    put('WASD: andar | O: objetos TMX | K: colisao TESTE | C: debug | R: reiniciar',
+    put('WASD: andar | J/K/L: previas de ataque 1/2/3 | G: colisao TMX | R: reiniciar',
         panel.x+10,panel.y+panel.h-50,{1,1,1},context.small)
     put(string.format('Pose original: %d partes visíveis, %d não resolvidas; geometria e 30 fps PROVISÓRIOS',
         drawn,unresolved),panel.x+10,panel.y+panel.h-27,{1,0.77,0.45},context.small)
