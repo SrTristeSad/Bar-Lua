@@ -1,0 +1,55 @@
+{
+  "phase": 16,
+  "version": "1.0.1811",
+  "library_sha256": "8199604d199b57ebe329725c9a624b85517f495f78c1dad745449684750e4677",
+  "disclaimer": "Achados de análise estática. Não implementa física nem confirma fidelidade visual.",
+  "constants": {
+    "body_position_divisor": 100.0,
+    "polygon_x_negative_scale": -0.004999999888241291,
+    "polygon_x_positive_scale": 0.004999999888241291
+  },
+  "functions": [
+    {
+      "name": "Entity::InitB2Body(b2Vec2 const&, bool)",
+      "address": "0xe47ac0",
+      "size_bytes": 204,
+      "instructions": 51,
+      "checks": [
+        "body_dynamic_type",
+        "converts_xy",
+        "creates_world_body",
+        "existing_body_guard",
+        "static_override",
+        "stores_body"
+      ]
+    },
+    {
+      "name": "Entity::InitCollision(config::hero::CollisionConfig const*)",
+      "address": "0xe47b8c",
+      "size_bytes": 984,
+      "instructions": 246,
+      "checks": [
+        "assign_user_data",
+        "circle_fixture",
+        "custom_polygons",
+        "custom_shape_scale",
+        "fixed_rotation",
+        "null_config_guard",
+        "polygon_vertices",
+        "rectangle_height_read",
+        "rectangle_width_read",
+        "shape_type_1",
+        "shape_type_2",
+        "shape_type_3"
+      ]
+    }
+  ],
+  "findings": [
+    "InitB2Body evita recriar corpo quando ponteiro existente não é nulo; senão chama b2World::CreateBody.",
+    "InitB2Body divide coordenadas iniciais por 100.0 (constante ELF verificada).",
+    "InitB2Body possui desvio para b2Body::SetType quando o argumento booleano é verdadeiro.",
+    "InitCollision testa códigos 1, 2 e 3, chegando respectivamente a fixture circular, polígono de quatro vértices e geração de polígonos personalizada.",
+    "Os caminhos de fixture observados associam a Entity ao userData do corpo e invocam SetFixedRotation.",
+    "Os caminhos de configuração e flags são condicionais; a análise não recupera filtros/máscaras e contatos completos."
+  ]
+}
