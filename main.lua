@@ -477,6 +477,8 @@ function love.keypressed(key)
             local ok=playtest.start(selectedItem(),playtest.findHero(animations),atlases)
             if not ok then status=playtest.state().error or 'Erro físico' end
             return
+        elseif key == 'o' then playtest.toggleMapObjects();return
+        elseif key == 'k' then playtest.toggleMapCollision();return
         elseif key == 'c' then playtest.toggleDebug();return
         elseif key:match('^[1-5]$') then playtest.setVariant(tonumber(key)-1);return
         elseif key == 'up' or key == 'down' or key == 'left' or key == 'right' then return end
