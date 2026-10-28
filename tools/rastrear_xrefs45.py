@@ -16,10 +16,10 @@ SHA256="8199604d199b57ebe329725c9a624b85517f495f78c1dad745449684750e4677"
 TARGETS={"Entity::addSkill(skillPtr)":0xe48744,"CSkill::Release":0xe65034,
          "CSelfSkill::HasFunctions":0xe65a90,"CSelfSkill::Update":0xe65924,
          "CSelfSkill::Init":0xe657b0}
-HEADER=re.compile(r"^\\s*[0-9a-f]+\\s+<([^>]+)>:\\s*$",re.I)
+HEADER=re.compile(r"^\s*[0-9a-f]+\s+<([^>]+)>:\s*$",re.I)
 OP=re.compile(
- r"^\\s*([0-9a-f]+):\\s+(?:(?:[0-9a-f]{8}|(?:[0-9a-f]{2}\\s+){3}[0-9a-f]{2})\\s+)?"
- r"(bl|b)\\s+(?:#?0x)?([0-9a-f]+)(?=\\s|$)",re.I)
+ r"^\s*([0-9a-f]+):\s+(?:(?:[0-9a-f]{8}|(?:[0-9a-f]{2}\s+){3}[0-9a-f]{2})\s+)?"
+ r"(bl|b)\s+(?:#?0x)?([0-9a-f]+)(?=\s|$)",re.I)
 
 def parse(lines):
     result={k:[] for k in TARGETS}
@@ -57,7 +57,7 @@ def main():
     args=ap.parse_args()
     result=scan(args.elf)
     args.out.parent.mkdir(parents=True,exist_ok=True)
-    args.out.write_text(json.dumps(result,indent=2)+"\\n",encoding="utf-8")
+    args.out.write_text(json.dumps(result,indent=2)+"\n",encoding="utf-8")
     print(json.dumps({name:len(entries) for name,entries
                       in result["direct_branches"].items()},indent=2))
 if __name__=="__main__":main()
