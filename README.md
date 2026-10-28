@@ -377,3 +377,14 @@ Este repositório público distribui somente o código-fonte da investigação. 
 ### Referência de formato para CSB
 
 O mapeamento dos campos comuns `.csb` foi confrontado com o projeto público [csb-flatbuffers-schema](https://github.com/halx99/csb-flatbuffers-schema) e com os arquivos fornecidos do APK. O leitor é uma implementação independente: não inclui nem redistribui o esquema ou binários de terceiros.
+
+## Fase 20 — prévia dos três ataques do bárbaro (SEM combate)
+
+- A auditoria `tools/analisar_ataques.py` verifica o SHA-256 da biblioteca nativa original e confirma 35 instruções em `Hero::onButtonClicked` e `Hero::getButtonState`.
+- O primeiro método valida um índice de botão, verifica sua configuração e encaminha a criação da habilidade para `CSkill::CreateSkillBySkillConfigId` e `Entity::addSkill`. O segundo consulta um estado por índice. **Nenhuma correspondência entre os botões e `attack1/2/3` foi demonstrada.**
+- O arquivo original `character/babarian/babarian.bexportjson` possui 15 movimentos `attack1/2/3` com 5 variantes cada; seus nomes e durações em quadros são registrados em `reports/native_attacks.json`.
+- A cena de teste Ctrl+P agora usa as teclas **J/K/L para pré-visualizar** as três sequências originais, sem hitbox, dano, IA, efeitos, consumo, rede nem cooldown. Pressionar outra tecla de ataque antes de acabar a animação não a substitui; para reiniciar use R.
+- **G** ativa/desativa a colisão TMX EXPERIMENTAL (era K na Fase 19); O mostra os objetos, C mostra colisores, WASD move.
+- O conversor de quadros usa **30 fps apenas como convenção visual de investigação**, não é uma confirmação da taxa original de reprodução; não afirmar equivalência 1:1.
+- Rode `python tools/analisar_ataques.py` e `python -m unittest discover -s tests -p 'test_*.py'` a partir da raiz para verificar a versão.
+- Os binários e os assets do APK não pertencem ao repositório público.
