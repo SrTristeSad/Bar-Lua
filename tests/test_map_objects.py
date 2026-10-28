@@ -10,6 +10,8 @@ spec.loader.exec_module(prep)
 
 class TMXObjectTests(unittest.TestCase):
     def test_original_five_object_groups(self):
+        if not (ROOT / 'assets_original').is_dir():
+            self.skipTest('Recursos originais não incluídos no GitHub público')
         all_maps = sorted((ROOT / 'assets_original').rglob('*.tmx'))
         found = {}
         for path in all_maps:
