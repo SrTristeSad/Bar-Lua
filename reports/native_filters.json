@@ -1,0 +1,88 @@
+{
+  "phase": 17,
+  "apk_version": "1.0.1811",
+  "library_sha256": "8199604d199b57ebe329725c9a624b85517f495f78c1dad745449684750e4677",
+  "notes": "Metadados de análise estática: não executa física nem prova contatos em uma partida.",
+  "entity_setCollidable": {
+    "true": {
+      "categoryBits": 1,
+      "maskBits": 3,
+      "groupIndex": 0
+    },
+    "false": {
+      "categoryBits": 0,
+      "maskBits": 1,
+      "groupIndex": 0
+    },
+    "fixture_selection": "primeiro fixture do corpo em Entity +0x28 (acesso +0x70 no corpo)",
+    "scope": "somente a função auditada: não extrapolar aos demais fixtures ou entidades"
+  },
+  "filter_rule": {
+    "group": "mesmo groupIndex não zero: permitir somente se positivo",
+    "masks": "(A.mask & B.category)!=0 e (B.mask & A.category)!=0",
+    "result": "decisão de criar contato, não resposta de colisão"
+  },
+  "functions": [
+    {
+      "name": "Entity::setCollidable(bool)",
+      "address": "0xe49cb4",
+      "size_bytes": 132,
+      "instructions": 33,
+      "checks": [
+        "body_fixture",
+        "branch_false",
+        "calls_filter_api",
+        "disabled_category_zero",
+        "disabled_group_zero",
+        "disabled_mask_1",
+        "enabled_category_1",
+        "enabled_group_zero",
+        "enabled_mask_3",
+        "flag_low_bit"
+      ]
+    },
+    {
+      "name": "b2ContactFilter::ShouldCollide(b2Fixture*, b2Fixture*)",
+      "address": "0x1b72260",
+      "size_bytes": 88,
+      "instructions": 22,
+      "checks": [
+        "both_directions_required",
+        "category_a",
+        "category_b",
+        "group_compare",
+        "group_read_a",
+        "group_read_b",
+        "mask_a",
+        "mask_b",
+        "positive_group"
+      ]
+    },
+    {
+      "name": "b2Fixture::SetFilterData(b2Filter const&)",
+      "address": "0x1b6f4d0",
+      "size_bytes": 184,
+      "instructions": 46,
+      "checks": [
+        "copy_category_mask",
+        "read_group",
+        "touch_proxies",
+        "write_group"
+      ]
+    },
+    {
+      "name": "config::hero::CollisionConfig::load(tms::xconf::DataLine&)",
+      "address": "0x18679f8",
+      "size_bytes": 236,
+      "instructions": 59,
+      "checks": [
+        "optional_objects",
+        "read_shape_type",
+        "store_optional_circle",
+        "store_optional_custom",
+        "store_optional_rect",
+        "store_type"
+      ]
+    }
+  ]
+}
