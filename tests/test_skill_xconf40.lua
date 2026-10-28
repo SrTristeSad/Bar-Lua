@@ -1,0 +1,20 @@
+local view=require('src.skill_xconf_view')
+local report=require('reports.skill_xconf40')
+assert(report.phase==40 and report.gameplay_enabled==false)
+assert(report.skill_id==4010020 and report.kind==10050)
+assert(report.creator_count==0 and report.target_count==0 and report.third_count==0)
+assert(report.records==31119 and report.decoded==31013 and report.skipped==106)
+view.reset()
+local snapshot=assert(view.snapshot(report))
+assert(snapshot.page==1 and snapshot.enhancement==-1)
+assert(view.keypressed('right') and view.snapshot(report).page==2)
+assert(view.keypressed('left') and view.snapshot(report).page==1)
+assert(view.keypressed('r') and view.snapshot(report).page==1)
+assert(view.snapshot({phase=40,gameplay_enabled=true})==nil)
+assert(view.snapshot({phase=40,gameplay_enabled=false,condition_lists_verified=true,
+ damage_chain_verified=false,creator_count=1,target_count=0,third_count=0,kind=10050})==nil)
+local output={}
+view.draw(report,{x=0,y=0,w=650,h=550,small=nil,background=function()end,
+ put=function(t)output[#output+1]=t end})
+assert(#output>8)
+print('F40 XCONF LUA OK')

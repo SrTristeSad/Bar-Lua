@@ -1,0 +1,74 @@
+{
+  "phase": 38,
+  "apk_version": "1.0.1811",
+  "elf_sha256": "8199604d199b57ebe329725c9a624b85517f495f78c1dad745449684750e4677",
+  "audited": [
+    {
+      "function": "CSkill::ctor",
+      "address": "0xe64c40",
+      "size": 188,
+      "instructions": 47,
+      "checks": 6
+    },
+    {
+      "function": "CSkill::creator_conditions",
+      "address": "0xe653a0",
+      "size": 220,
+      "instructions": 55,
+      "checks": 12
+    },
+    {
+      "function": "CSkill::target_conditions",
+      "address": "0xe65484",
+      "size": 212,
+      "instructions": 53,
+      "checks": 11
+    },
+    {
+      "function": "CSkill::target_noarg",
+      "address": "0xe6547c",
+      "size": 8,
+      "instructions": 2,
+      "checks": 2
+    },
+    {
+      "function": "CConditionManager::GetCondition",
+      "address": "0xe45b5c",
+      "size": 116,
+      "instructions": 29,
+      "checks": 4
+    },
+    {
+      "function": "CSkill::CreateSkillBySkillConfigId",
+      "address": "0xe650b4",
+      "size": 320,
+      "instructions": 80,
+      "checks": 8
+    }
+  ],
+  "verified_instructions": 266,
+  "checkpoints": 43,
+  "binding": {
+    "binding_id": 10039,
+    "button_code": 2,
+    "skill_id": 4010020,
+    "config_present": true
+  },
+  "native_fields": {
+    "creator_ids": "CSkill+0x28 -> HeroSkillConfig+0xB0",
+    "target_ids": "CSkill+0x30 -> HeroSkillConfig+0xD0"
+  },
+  "rules": [
+    "CSkill::GetCreatorConditionsResult: lista ausente/vazia retorna true; lista ativa executa condicoes em ordem e para no primeiro false.",
+    "CSkill::GetTargetConditionsResult(CSkillEntity const&): lista ausente/vazia retorna true; virtual slot +0x20 para cada candidato e para no primeiro false.",
+    "CSkill::GetTargetConditionsResult() sem argumento retorna true diretamente: nao avalia candidatos.",
+    "Criador passa vetor de alvos, criador e skill ao CCondition; avaliacao de alvo fornece criador e candidato.",
+    "CSkill::CreateSkillBySkillConfigId escolhe CSelfSkill para config tipo 10050; outros tipos vao para CMultiTargetSkill."
+  ],
+  "limits": [
+    "Nao decodifica as listas da configuracao 4010020; os ponteiros +0xb0/+0xd0 foram confirmados mas seus IDs nao foram atribuídos a essa habilidade.",
+    "Nao prova a ligacao entre 4010020 e o seletor 10052 ou uma funcao de dano.",
+    "Nao executa efeitos, alvo final, hitbox ou dano, nem reproduz gerenciamento de memoria do CConditionManager.",
+    "Os dados originais de configuracao e o ELF nao entram no ZIP publico de fontes."
+  ]
+}

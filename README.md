@@ -1018,3 +1018,163 @@ Windows real; os testes são automatizados em Python/Lua.
 presente em `lib/arm64-v8a/`; `python -m unittest
  tests.test_compare_conditions_phase37 -v`; `luatex --luaonly
  tests/test_compare_conditions.lua`.
+
+
+---
+
+## Fase 38 — portas de condições de habilidades (investigação, sem combate)
+
+Auditoria estática do ELF ARM64 do BarbarQ **1.0.1811** em
+`tools/analisar_gate_habilidades.py`, com validação SHA-256, símbolos de
+função, endereços e 43 instruções-chave; foram verificadas **266
+instruções em seis funções**.
+
+### Caminho nativo comprovado
+
+- O construtor `CSkill(config::skill::HeroSkillConfig const*)` referencia
+  `HeroSkillConfig+0xB0` em `CSkill+0x28` (IDs de condições do criador) e
+  `HeroSkillConfig+0xD0` em `CSkill+0x30` (IDs de condições do alvo).
+- `CSkill::GetCreatorConditionsResult` obtém cada ID pelo
+  `CConditionManager::GetCondition`, passa a lista de alvos, a entidade
+  criadora e a habilidade, e chama o método virtual em `+0x18`. A primeira
+  reprovação retorna falso. Lista ausente ou vazia retorna verdadeiro.
+- `CSkill::GetTargetConditionsResult(CSkillEntity const&)` faz a mesma
+  avaliação sequencial para um candidato, chamando o método virtual em
+  `+0x20`. A sobrecarga **sem argumento** simplesmente retorna verdadeiro.
+- `CSkill::CreateSkillBySkillConfigId` diferencia o tipo **10050**,
+  instanciado como `CSelfSkill`, dos demais, usados no caminho
+  `CMultiTargetSkill`.
+- A configuração original confirma o vínculo de botão
+  **10039 → código 2 → habilidade 4010020**. Esse vínculo, por si só, **não
+  determina** os IDs de condição usados por essa habilidade nem prova
+  a ligação com o seletor 10052, qualquer hitbox ou dano.
+
+### Ferramentas e limites
+
+`src/skill_condition_gate.lua` reproduz apenas a ordem de avaliação,
+resultado booleano e interrupção na primeira reprovação, com
+**predicados injetados**. Nunca lê entidades reais ou manipula HP.
+`src/skill_condition_gate_view.lua` implementa a aba **Portas** (`Ctrl+G`)
+com oito casos artificiais. `reports/skill_condition_gate.{json,lua}`
+contêm somente dados mínimos de evidência, sem conteúdo proprietário
+das tabelas do APK.
+
+Reproduzir: `python tools/analisar_gate_habilidades.py`, seguido de
+`python -m unittest discover -s tests -q`. O analisador precisa da
+biblioteca original em `lib/arm64-v8a/libcocos2dcpp.so`; ela fica de fora
+do ZIP de código. A cena controlável (`Ctrl+P`) permanece experimental,
+sem ataques capazes de causar dano. A interface ainda não foi testada
+num Windows real.
+
+**Fase 39 planejada:** investigar o esquema serializado de
+`HeroSkillConfig` para relacionar os IDs de condições do criador/alvo a
+configurações concretas, começando pelo ataque `4010020`.
+
+
+## Fase 40 — interpretação dos vetores xconf (BarbarQ 1.0.1811)
+
+**Descoberta verificada:** o carregador nativo `config::skill::HeroSkillConfig::load`
+lê três vetores `std::vector<int>`, cada um precedido por um inteiro com sua
+contagem. Entre o primeiro e o segundo há o campo escalar `+0xC8` que define
+o tipo da habilidade. Depois do terceiro, o carregador lê um ID de
+`EnhanceConfig` (`-1` quando ausente).
+
+- `HeroSkillConfig+0xB0`: IDs de condições do **criador**, copiados para `CSkill+0x28`.
+- `HeroSkillConfig+0xC8`: tipo da habilidade; `10050` segue pelo ramo `CSelfSkill`.
+- `HeroSkillConfig+0xD0`: IDs de condições do **alvo**, copiados para `CSkill+0x30`.
+- `HeroSkillConfig+0xE8`: terceiro vetor, copiado para `CSkill+0x38`. Seu significado
+  funcional completo não foi confirmado.
+- `HeroSkillConfig+0x100`: referência resolvida a `EnhanceConfig` (quando existente).
+
+O registro da habilidade básica **4010020**, vinculada ao botão **10039**
+(código **2**), decodifica: criador `[]`, tipo `10050`, alvo `[]`,
+terceiro vetor `[]` e melhoria `-1`. Isso **corrige a incerteza registrada
+na Fase 39** sobre a interpretação do sufixo. As listas vazias não são uma
+prova de que o ataque não executa outras rotinas nativas.
+
+O decodificador `tools/decodificar_skill_xconf.py` valida o SHA-256 da
+`libcocos2dcpp.so` e da tabela do APK, confirma instruções ARM64 e cruza
+as referências com a auditoria da Fase 38. Dos **31.119** registros, **31.013**
+são decodificados integralmente na parte de vetores; os outros **106**
+contêm objetos opcionais presentes cuja representação ainda não foi recuperada.
+Esses 106 registros não são descartados silenciosamente nem interpretados
+por adivinhação. Os relatórios exportados não contêm as linhas originais.
+
+**Nova aba `Listas` (`Ctrl+K`)**: consulta de três páginas sobre os campos
+identificados, a habilidade 4010020 e as limitações. Não cria dano,
+hitboxes, inimigos, tempo de recarga nem combate jogável.
+
+**Para reproduzir a auditoria:**
+
+```bash
+python tools/decodificar_skill_xconf.py
+python -m unittest tests/test_skill_xconf40.py -v
+luatex --luaonly tests/test_skill_xconf40.lua
+```
+
+A biblioteca original e as tabelas do jogo devem estar nas pastas locais
+indicadas na documentação; o ZIP público de código não as inclui. A
+interface gráfica no Windows real ainda carece de validação.
+
+
+## Fase 39 — esquema de HeroSkillConfig (inspeção, sem combate)
+
+Análise estática de `config::skill::HeroSkillConfig::load` no ELF ARM64
+original do BarbarQ **1.0.1811**. O relatório em
+`reports/hero_skill_schema.json` identifica a função em `0x152e3e8`,
+com **1.528 bytes, 382 instruções e 18 verificações** de instruções e
+endereços; o `SHA-256` da biblioteca deve coincidir com a auditoria F38.
+
+O carregador faz chamadas de `decodeInt` para três vetores de inteiros
+nos offsets **`+0xB0`, `+0xD0` e `+0xE8`**, trata um objeto opcional
+em `+0xA8` e resolve um ponteiro de configuração em `+0x100`.
+A associação completa das colunas do TXT com cada lista ainda **não**
+foi comprovada. Portanto **não** classificamos números encontrados no
+TXT como IDs de condições, funções ou eventos sem mais evidência.
+
+O registro `4010020` foi encontrado entre **31.119 registros** de
+`config.skill.heroskillconfig.txt`. Os últimos quatro tokens numéricos
+são `10050 0 0 -1`. O vínculo de botão **10039 → código 2 → 4010020**
+continua confirmado. A comparação por token numérico inteiro encontrou
+apenas **uma ocorrência** desse ID em `functionbindskill` e **uma** na
+própria tabela de habilidades. Ocorrências do número como parte de IDs
+maiores não foram contadas como referências; presença de um ID não
+comprova execução em tempo de jogo.
+
+`tools/analisar_esquema_skill.py` verifica o ELF, o hash das tabelas,
+o vínculo e os offsets do carregador, gerando um relatório JSON e outro
+Lua com **somente metadados e contagens**. A nova aba **SkillCfg
+(`Ctrl+S`)** exibe três páginas de evidências. Não causa dano nem
+altera a cena controlável. Executar:
+
+```sh
+python tools/analisar_esquema_skill.py
+python -m unittest discover -s tests -q
+```
+
+**Próxima investigação:** recuperar o esquema completo de xconf e a
+interpretação das três listas antes de atribuir condições reais ao
+ataque `4010020`.
+
+## Fase 41 — execução estática do terceiro vetor de `HeroSkillConfig`
+
+**Objetivo:** rastrear o vetor no offset `HeroSkillConfig +0xE8` até a criação e inicialização das funções `CFunction`, sem antecipar mecânicas de combate.
+
+A auditoria de `libcocos2dcpp.so` da versão **1.0.1811 ARM64** verificou oito funções e **532 instruções** (39 verificações pontuais de opcode e operandos, além de SHA-256 e símbolos): `CSkill::CSkill(config)`, `CSkill::GetTargetEntitys`, `CSkill::CreateSkillBySkillConfigId`, `CSkill::AddFunction`, `CSelfSkill::CSelfSkill`, `CSelfSkill::Init`, `CSelfSkill::Update` e `CSelfSkill::HasFunctions`.
+
+1. `HeroSkillConfig +0xE8` é guardado em `CSkill +0x38`. O construtor de `CSelfSkill` percorre os identificadores e chama o método virtual de adição de função (`+0x18`), que pode usar `CFunction::CreateFunctionByFunctionId`.
+2. `CSelfSkill::Init` percorre as funções construídas e prepara criador, alvos e contexto (`SetCreatorEntity`, `SetTargetEntitys` e `SetEntity`). `CSelfSkill::Update` percorre as funções e remove as inativas; a execução de efeitos concretos continua fora do port Lua.
+3. `HeroSkillConfig +0xC8` é **identificador de seleção de alvos**: o código o encaminha para `CSelectTarget::GetSelectById`, e `CreateSkillBySkillConfigId` usa o valor `10050` para decidir instanciar `CSelfSkill` em vez de `CMultiTargetSkill`. Portanto o rótulo “tipo” das fases 39/40 **não deve ser interpretado como um segundo enum independente de tipo de habilidade**.
+4. Nas **31.013** configurações com objeto opcional ausente decodificadas na Fase 40, há **62.722** ocorrências de IDs de função (**61.555** IDs distintos); **todas** possuem correspondência exata em uma das 23 tabelas `config.skill.function*.txt` do APK. Outros **106** registros continuam pendentes da decodificação do objeto opcional.
+5. A habilidade básica **4010020** (botão **10039**, código **2**) possui o vetor de funções vazio. **Não há funções criadas diretamente por seu terceiro vetor nesse caminho**; isso não prova ausência de ataque ou de efeitos por outras rotinas. É incorreto atribuir-lhe automaticamente uma `functiondamage` ou uma animação específica.
+
+Foram adicionados `tools/analisar_fluxo_selfskill.py`, `reports/self_skill_flow.json`, `reports/self_skill_flow.lua`, `src/self_skill_flow.lua` e `src/self_skill_flow_view.lua`, com testes em `tests/test_selfskill_phase41.py` e `tests/test_selfskill_flow.lua`. A nova aba **SelfFn (`Ctrl+T`)** possui quatro páginas de pesquisa. O modelo Lua apenas monta um *plano* de criação de funções e vinculação de referências; **não executa `CFunction::Run`, não altera atributos nem aplica dano**.
+
+Para repetir a auditoria, com os recursos e ELF originais disponíveis:
+
+```bash
+python tools/analisar_fluxo_selfskill.py
+python -m unittest discover -s tests -p 'test_selfskill_phase41.py' -v
+```
+
+Limites: o APK usado foi fornecido para a análise; seus recursos e a biblioteca proprietária não são publicados no repositório de código. A cena controlável de movimento da Fase 18 permanece **experimental**, e a execução gráfica no Windows real ainda não foi validada. A próxima fase deverá rastrear por que o botão 10039 dispara o ataque quando o vetor da habilidade 4010020 está vazio, incluindo rotinas fora do construtor `CSelfSkill`.

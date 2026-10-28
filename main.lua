@@ -1,7 +1,7 @@
 -- Bar-Lua | laboratório de engenharia reversa do BarbarQ 1.0.1811.
 -- NÃO é o jogo: visualização técnica, prévias experimentais e análise de dados originais.
-local modes = {"Mapas TMX", "Imagens", "Atlas .plist/.bplist", "Configurações", "Animações", "Cenas .csb", "ELF ARM64", "Fluxo ARM64", "Movimento ARM64", "Entity / Box2D", "Contatos ARM64", "Colisores ARM64", "Filtros Box2D", "Teste de movimento", "Habilidades (dados)", "Combate ARM64", "Núcleo de dano ARM64", "HP / Vida ARM64", "Morte / Score ARM64", "Renascimento ARM64", "ReInit ARM64", "Atributos por nível", "Escopo de setor (AABB)", "Filtro de alvos (ARM64)", "Condicoes ARM64", "Predicados ARM64", "Comparacoes ARM64"}
-local tabLabels = {"Mapa", "Img", "Atlas", "Cfg", "Anim", "CSB", "ELF", "Fluxo", "Mov", "Ent", "Cont", "Colis", "Filtro", "Teste", "Skill", "Comb", "Dano", "Vida", "Morte", "Renas", "ReInit", "Níveis", "Escopo", "Alvos", "Cond", "Pred", "Comp"}
+local modes = {"Mapas TMX", "Imagens", "Atlas .plist/.bplist", "Configurações", "Animações", "Cenas .csb", "ELF ARM64", "Fluxo ARM64", "Movimento ARM64", "Entity / Box2D", "Contatos ARM64", "Colisores ARM64", "Filtros Box2D", "Teste de movimento", "Habilidades (dados)", "Combate ARM64", "Núcleo de dano ARM64", "HP / Vida ARM64", "Morte / Score ARM64", "Renascimento ARM64", "ReInit ARM64", "Atributos por nível", "Escopo de setor (AABB)", "Filtro de alvos (ARM64)", "Condicoes ARM64", "Predicados ARM64", "Comparacoes ARM64", "Portas de skill ARM64", "Esquema de habilidade", "Listas xconf de habilidade", "Funções CSelfSkill ARM64"}
+local tabLabels = {"Mapa", "Img", "Atlas", "Cfg", "Anim", "CSB", "ELF", "Fluxo", "Mov", "Ent", "Cont", "Colis", "Filtro", "Teste", "Skill", "Comb", "Dano", "Vida", "Morte", "Renas", "ReInit", "Níveis", "Escopo", "Alvos", "Cond", "Pred", "Comp", "Gate", "SkillCfg", "Listas", "SelfFn"}
 local animationView = require("src.animation_view")
 local sceneView = require("src.scene_view")
 local nativeView = require("src.native_view")
@@ -25,10 +25,14 @@ local sectorFilterView = require("src.sector_filter_view")
 local conditionView = require("src.condition_view")
 local concreteConditionsView = require("src.concrete_conditions_view")
 local compareConditionsView = require("src.compare_conditions_view")
+local skillConditionGateView = require("src.skill_condition_gate_view")
+local heroSkillSchemaView = require("src.hero_skill_schema_view")
+local skillXconfView = require("src.skill_xconf_view")
+local selfSkillFlowView = require("src.self_skill_flow_view")
 local sceneResources = require("src.scene_resources")
 local spriteGeometry = require("src.sprite_geometry")
 local mode, selected, search, zoom = 1, 1, "", 1
-local lists = {{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}}
+local lists = {{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}}
 local maps, atlases, animations, scenes, nativeCatalog, flowCatalog, contactCatalog, colliderCatalog, filterCatalog = {}, {}, {}, {}, {}, {}, {}, {}, {}
 local sceneResourceIndex = nil
 local skillCatalog = {links={},tables={}}
@@ -48,6 +52,10 @@ local sectorFilterReport = {}
 local conditionReport = {}
 local concreteConditionsReport = {}
 local compareConditionsReport = {}
+local skillConditionGateReport = {}
+local heroSkillSchemaReport = {}
+local skillXconfReport = {}
+local selfSkillFlowReport = {}
 local imageIndex = {}
 local textures, quads = {}, {}
 local position = {x = 0, y = 0}
@@ -98,6 +106,9 @@ local function setMode(index)
     conditionView.reset()
     concreteConditionsView.reset()
     compareConditionsView.reset()
+    skillConditionGateView.reset()
+    heroSkillSchemaView.reset()
+    skillXconfView.reset()
     if mode == 14 then
         for i, m in ipairs(lists[14]) do
             if m.name == 'petisland_01' then selected = i; break end
@@ -420,6 +431,10 @@ function love.load()
     conditionReport = readLua("reports/condition_flow.lua")
     concreteConditionsReport = readLua("reports/concrete_conditions.lua")
     compareConditionsReport = readLua("reports/compare_conditions.lua")
+    skillConditionGateReport = readLua("reports/skill_condition_gate.lua")
+    heroSkillSchemaReport = readLua("reports/hero_skill_schema.lua")
+    skillXconfReport = readLua("reports/skill_xconf40.lua")
+    selfSkillFlowReport = readLua("reports/self_skill_flow.lua")
     for _, map in ipairs(maps) do lists[1][#lists[1]+1] = map end
     scan("assets_original", {png = true, jpg = true, jpeg = true}, lists[2])
     for _, atlas in ipairs(atlases) do lists[3][#lists[3]+1] = atlas end
@@ -447,6 +462,10 @@ function love.load()
     lists[25][1] = {name="CCondition: filtros de alvo"}
     lists[26][1] = {name="Camp / EntityKind / Buff"}
     lists[27][1] = {name="SkillEntity / ValueCompare"}
+    lists[28][1] = {name="CSkill: portas de criador e alvo"}
+    lists[29][1] = {name="HeroSkillConfig: esquema nativo"}
+    lists[30][1] = {name="HeroSkillConfig: vetores xconf"}
+    lists[31][1] = {name="CSelfSkill: funcoes e ciclo de vida"}
     for _, path in ipairs(lists[2]) do
         imageIndex[path:gsub("^assets_original/", ""):lower()] = path:gsub("^assets_original/", "")
     end
@@ -528,6 +547,14 @@ function love.draw()
         filterView.draw(item, {x=x, y=y, w=pw, h=ph, put=put, background=background, small=small})
     elseif mode == 15 then
         skillView.draw(item,{x=x,y=y,w=pw,h=ph,put=put,background=background,small=small},skillCatalog.tables,skillTrace)
+    elseif mode == 31 then
+        selfSkillFlowView.draw(selfSkillFlowReport,{x=x,y=y,w=pw,h=ph,put=put,background=background,small=small})
+    elseif mode == 30 then
+        skillXconfView.draw(skillXconfReport,{x=x,y=y,w=pw,h=ph,put=put,background=background,small=small})
+    elseif mode == 29 then
+        heroSkillSchemaView.draw(heroSkillSchemaReport,{x=x,y=y,w=pw,h=ph,put=put,background=background,small=small})
+    elseif mode == 28 then
+        skillConditionGateView.draw(skillConditionGateReport,{x=x,y=y,w=pw,h=ph,put=put,background=background,small=small})
     elseif mode == 27 then
         compareConditionsView.draw(compareConditionsReport,{x=x,y=y,w=pw,h=ph,put=put,background=background,small=small})
     elseif mode == 26 then
@@ -577,6 +604,10 @@ function love.keypressed(key)
     if key == 'j' and love.keyboard.isDown('lctrl','rctrl') then setMode(25); return end
     if key == 'u' and love.keyboard.isDown('lctrl','rctrl') then setMode(26); return end
     if key == 'y' and love.keyboard.isDown('lctrl','rctrl') then setMode(27); return end
+    if key == 'g' and love.keyboard.isDown('lctrl','rctrl') then setMode(28); return end
+    if key == 's' and love.keyboard.isDown('lctrl','rctrl') then setMode(29); return end
+    if key == 'k' and love.keyboard.isDown('lctrl','rctrl') then setMode(30); return end
+    if key == 't' and love.keyboard.isDown('lctrl','rctrl') then setMode(31); return end
     if mode == 14 then
         if key == 'r' then
             local ok=playtest.start(selectedItem(),playtest.findHero(animations),atlases)
@@ -606,6 +637,10 @@ function love.keypressed(key)
     if mode == 25 and conditionView.keypressed(key) then return end
     if mode == 26 and concreteConditionsView.keypressed(key) then return end
     if mode == 27 and compareConditionsView.keypressed(key) then return end
+    if mode == 28 and skillConditionGateView.keypressed(key) then return end
+    if mode == 29 and heroSkillSchemaView.keypressed(key) then return end
+    if mode == 30 and skillXconfView.keypressed(key) then return end
+    if mode == 31 and selfSkillFlowView.keypressed(key) then return end
     if mode == 13 and filterView.keypressed(key) then return end
     if mode == 10 and entityMoveView.keypressed(key) then return end
     if mode == 9 and movementView.keypressed(key) then return end
@@ -664,7 +699,7 @@ function love.textinput(text)
     if mode == 3 and (text == "[" or text == "]") then return end
     if mode == 5 and (text:lower() == "i" or text:lower() == "b" or text:lower() == "p") then return end
     if mode == 6 and (text:lower() == "g" or text:lower() == "v" or text:lower() == "t") then return end
-    if mode == 9 or mode == 10 or mode == 13 or mode == 14 or mode == 16 or mode == 17 or mode == 18 or mode == 19 or mode == 20 or mode == 21 or mode == 22 or mode == 23 or mode == 24 or mode == 25 or mode == 26 or mode == 27 then return end
+    if mode == 9 or mode == 10 or mode == 13 or mode == 14 or mode == 16 or mode == 17 or mode == 18 or mode == 19 or mode == 20 or mode == 21 or mode == 22 or mode == 23 or mode == 24 or mode == 25 or mode == 26 or mode == 27 or mode == 28 or mode == 29 or mode == 30 then return end
     if mode ~= 1 and #search < 80 and text:match("%g") then search = search .. text; selected = 1; resetImage(); if mode == 5 then animationView.reset() end; if mode == 6 then sceneView.reset() end end
 end
 

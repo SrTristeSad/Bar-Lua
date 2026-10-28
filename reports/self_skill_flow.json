@@ -1,0 +1,276 @@
+{
+  "phase": 41,
+  "apk_version": "1.0.1811",
+  "elf_sha256": "8199604d199b57ebe329725c9a624b85517f495f78c1dad745449684750e4677",
+  "config_sha256": "e369f3a97549e67bf48999dd668017c638e355d648cb7ee2b7f4430afc6d859a",
+  "total_native_functions": 8,
+  "native_functions": [
+    {
+      "name": "CSkill::CSkill(config)",
+      "va": "0xe64c40",
+      "bytes": 188,
+      "instructions": 47,
+      "checkpoints": 4
+    },
+    {
+      "name": "CSkill::GetTargetEntitys",
+      "va": "0xe64f1c",
+      "bytes": 152,
+      "instructions": 38,
+      "checkpoints": 2
+    },
+    {
+      "name": "CSkill::CreateSkillBySkillConfigId",
+      "va": "0xe650b4",
+      "bytes": 320,
+      "instructions": 80,
+      "checkpoints": 5
+    },
+    {
+      "name": "CSkill::AddFunction",
+      "va": "0xe64fbc",
+      "bytes": 120,
+      "instructions": 30,
+      "checkpoints": 2
+    },
+    {
+      "name": "CSelfSkill::CSelfSkill",
+      "va": "0xe6555c",
+      "bytes": 596,
+      "instructions": 149,
+      "checkpoints": 11
+    },
+    {
+      "name": "CSelfSkill::Init",
+      "va": "0xe657b0",
+      "bytes": 372,
+      "instructions": 93,
+      "checkpoints": 7
+    },
+    {
+      "name": "CSelfSkill::Update",
+      "va": "0xe65924",
+      "bytes": 364,
+      "instructions": 91,
+      "checkpoints": 6
+    },
+    {
+      "name": "CSelfSkill::HasFunctions",
+      "va": "0xe65a90",
+      "bytes": 16,
+      "instructions": 4,
+      "checkpoints": 2
+    }
+  ],
+  "verified_arm64_instructions": 532,
+  "checkpoints": 39,
+  "skill_records_decoded": 31013,
+  "skill_records_pending_optional_object": 106,
+  "skills_with_function_ids": 29885,
+  "skills_without_function_ids": 1128,
+  "third_vector_total_entries": 62722,
+  "third_vector_distinct_ids": 61555,
+  "function_table_summary": {
+    "functionanimation": {
+      "records": 1489,
+      "sha256": "8d0cfaec8d9a446b454da27301fff439c6ecf55d694621ff0ad972f6dad59594"
+    },
+    "functionattachmodel": {
+      "records": 122,
+      "sha256": "5c500d00d18f10f26031ca1863daae01de59a483f2fd5e5bd0998dde31c783f9"
+    },
+    "functionbindskill": {
+      "records": 566,
+      "sha256": "7d225cb10fa454deb7b40829eaecd027618cd1427d01e0ac7f8799f1050edf49"
+    },
+    "functionbuff": {
+      "records": 8137,
+      "sha256": "dd400fa5b3ecfbc0ff47f59098a9b81247238ed261aab18b107f3488c6ccf314"
+    },
+    "functionchain": {
+      "records": 30,
+      "sha256": "e03dba4c91f4fe8ae931480774d7d558e4c8cba0650f119f4ddb8db01cb3d5a2"
+    },
+    "functionchangecolor": {
+      "records": 307,
+      "sha256": "ed81c715df859222383733e2e5b0e22476efa2a4b22f41484e4b24f5e5a977e0"
+    },
+    "functionchangecolor2": {
+      "records": 42,
+      "sha256": "e405eaeb4ded1b8d01f0078c3a2a32346ffe995c1330b32209d3a6a48a92ae90"
+    },
+    "functiondamage": {
+      "records": 687,
+      "sha256": "8da9da39bdbd98db2362738f1188181c63abe4034c33b8495e600a277aac168d"
+    },
+    "functiondelayskill": {
+      "records": 27948,
+      "sha256": "fa17e9db29b332251146e6b50ce580556b331aa9df1477b5a764e711b87f0646"
+    },
+    "functiondirection": {
+      "records": 585,
+      "sha256": "ca801b2bad835e715da134a9a88231b0aa2ab5ee3019bf24e494b107b2a43bb7"
+    },
+    "functionevent": {
+      "records": 1290,
+      "sha256": "a9eff2f425a02a289c85175200aa6c9a85fc48816189256a4fc2d775562bb9a1"
+    },
+    "functionforcemove": {
+      "records": 838,
+      "sha256": "856028cdc270852539fac5140173bdcdb3bfb3b40f012d62798fb8af3a6dfcb4"
+    },
+    "functionhurttransform": {
+      "records": 6,
+      "sha256": "1790218154687c8f0a05ad0e211496c11a6cde301f415de20b3ce8556d7da5b2"
+    },
+    "functioninstrction": {
+      "records": 737,
+      "sha256": "098065f3ff92768319121c42a3cc7edce26bb477d4a6b64afb87b0be30b0a495"
+    },
+    "functionrandomskill": {
+      "records": 726,
+      "sha256": "3de4ec13f84ba6fba2bcc77622965da3be2aff09a4efc762e97b4e264026d0d8"
+    },
+    "functionreleasebuttonoperation": {
+      "records": 209,
+      "sha256": "4ee155152eaf0e7699467cc22d775352aaee5085575068108d0193f4897589b1"
+    },
+    "functionrepeat": {
+      "records": 1308,
+      "sha256": "6a55c0d0f67982bb2c54ea8679b3361f8e1bf94325d46f135d763cbb38ab8370"
+    },
+    "functionsetting": {
+      "records": 5925,
+      "sha256": "4d7bcfd615ae59dc85fa11317e068bcaf46da6275087011b180c2fa72dff9253"
+    },
+    "functionsimulator": {
+      "records": 281,
+      "sha256": "3a287a5e1b016a91c80c16aef5bffc905bed7c5bfcaea8744ea985186d8f4528"
+    },
+    "functionskillevent": {
+      "records": 711,
+      "sha256": "7a95183b6c814575e2255986111b3b85709a14db75fcc31de1bc5b45a8c0648e"
+    },
+    "functionsummon": {
+      "records": 11204,
+      "sha256": "f9ea9ec9c0dfc4dfafd89b7fbfa39899dc2101e3fc091f716972ded811cd6ade"
+    },
+    "functionxytransform": {
+      "records": 105,
+      "sha256": "54fdb17cf56354e271f17c828069cf5c1aad8d9f0177f084817277909a0fa8c9"
+    },
+    "functionzinitspeedforheight": {
+      "records": 246,
+      "sha256": "1d93e3135cabf5e81ae35bc60c1515a1c2ba9512756f1f0ef11ba651e101e177"
+    }
+  },
+  "function_id_occurrences_by_table": {
+    "functionanimation": 1493,
+    "functionattachmodel": 120,
+    "functionbindskill": 588,
+    "functionbuff": 8362,
+    "functionchain": 27,
+    "functionchangecolor": 299,
+    "functionchangecolor2": 40,
+    "functiondamage": 658,
+    "functiondelayskill": 27338,
+    "functiondirection": 581,
+    "functionevent": 1266,
+    "functionforcemove": 790,
+    "functionhurttransform": 3,
+    "functioninstrction": 757,
+    "functionrandomskill": 710,
+    "functionreleasebuttonoperation": 226,
+    "functionrepeat": 1241,
+    "functionsetting": 5697,
+    "functionsimulator": 315,
+    "functionskillevent": 708,
+    "functionsummon": 11193,
+    "functionxytransform": 97,
+    "functionzinitspeedforheight": 213
+  },
+  "unmatched_distinct_function_ids": 0,
+  "examples": [
+    {
+      "skill_id": 20020,
+      "function_ids": [
+        500032,
+        12820036
+      ],
+      "function_tables": [
+        [
+          "functionbuff"
+        ],
+        [
+          "functiondelayskill"
+        ]
+      ]
+    },
+    {
+      "skill_id": 30020,
+      "function_ids": [
+        740032
+      ],
+      "function_tables": [
+        [
+          "functionbuff"
+        ]
+      ]
+    },
+    {
+      "skill_id": 40020,
+      "function_ids": [
+        1110032
+      ],
+      "function_tables": [
+        [
+          "functionbuff"
+        ]
+      ]
+    },
+    {
+      "skill_id": 50020,
+      "function_ids": [
+        2380036
+      ],
+      "function_tables": [
+        [
+          "functiondelayskill"
+        ]
+      ]
+    },
+    {
+      "skill_id": 60020,
+      "function_ids": [
+        50076
+      ],
+      "function_tables": [
+        [
+          "functionchangecolor"
+        ]
+      ]
+    }
+  ],
+  "basic_skill": {
+    "id": 4010020,
+    "button_binding_id": 10039,
+    "selector_id": 10050,
+    "third_vector_function_ids": [],
+    "instantiated_functions_from_config": 0
+  },
+  "native_links": {
+    "config_vector": "HeroSkillConfig+0xE8 -> CSkill+0x38",
+    "constructor": "CSelfSkill::CSelfSkill percorre CSkill+0x38 e cria CFunction via método virtual +0x18",
+    "init": "CSelfSkill::Init configura criador, alvos e contexto das funções instanciadas",
+    "update": "CSelfSkill::Update percorre funções ativas e limpa funções inativas",
+    "selector": "HeroSkillConfig+0xC8 -> CSkill+0x40 -> CSelectTarget::GetSelectById",
+    "selector_branch": "CSkill::CreateSkillBySkillConfigId utiliza 10050 para CSelfSkill, outros valores para CMultiTargetSkill"
+  },
+  "limits": [
+    "A terceira lista contém identificadores de funções; não é a lista de condições do criador ou dos alvos.",
+    "O ataque 4010020 não instancia funções diretamente pela lista vazia; pode depender de outro mecanismo, ainda não descoberto.",
+    "CSkill+0x40 é um identificador de seletor de alvos, também usado para decidir CSelfSkill/CMultiTargetSkill; não é um tipo independente de habilidade.",
+    "A associação de um ID a uma tabela de funções não demonstra quando sua ação é executada.",
+    "Nenhum ataque, dano, tempo de recarga ou respawn foi integrado ao gameplay."
+  ]
+}

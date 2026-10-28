@@ -1,0 +1,55 @@
+{
+  "phase": 39,
+  "apk_version": "1.0.1811",
+  "elf_sha256": "8199604d199b57ebe329725c9a624b85517f495f78c1dad745449684750e4677",
+  "function": "config::skill::HeroSkillConfig::load",
+  "address": "0x152e3e8",
+  "function_bytes": 1528,
+  "verified_instructions": 382,
+  "checkpoints": 18,
+  "native_fields": {
+    "first_vector": "HeroSkillConfig+0xB0",
+    "second_vector": "HeroSkillConfig+0xD0",
+    "third_vector": "HeroSkillConfig+0xE8",
+    "enhancement_pointer": "HeroSkillConfig+0x100",
+    "optional_object": "HeroSkillConfig+0xA8"
+  },
+  "table_sha256": "e369f3a97549e67bf48999dd668017c638e355d648cb7ee2b7f4430afc6d859a",
+  "records": 31119,
+  "binding": {
+    "id": 10039,
+    "button": 2,
+    "skill_id": 4010020
+  },
+  "basic_skill": {
+    "id": 4010020,
+    "tail": {
+      "token_count": 15,
+      "last_four_numeric": [
+        10050,
+        0,
+        0,
+        -1
+      ],
+      "first_numeric": 6
+    },
+    "condition_lists_verified": false,
+    "direct_damage_chain_verified": false
+  },
+  "token_occurrences": [
+    {
+      "table": "config.skill.functionbindskill.txt",
+      "token_occurrences": 1
+    },
+    {
+      "table": "config.skill.heroskillconfig.txt",
+      "token_occurrences": 1
+    }
+  ],
+  "limits": [
+    "A carga nativa confirma tres vetores e um ponteiro de melhoria; o esquema textual de todas as colunas ainda não foi determinado.",
+    "Tokens 10050,0,0,-1 constam no fim do registro; nao se atribuem automaticamente a listas de condicoes.",
+    "Ocorrencia numerica em outra tabela nao prova encadeamento de execucao.",
+    "Nao cria hitbox, alvo, dano nem modificação da cena."
+  ]
+}
