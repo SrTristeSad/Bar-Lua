@@ -1,0 +1,83 @@
+{
+  "phase": 42,
+  "apk_version": "1.0.1811",
+  "status": "cross_phase_evidence_review",
+  "source_reports": [
+    "reports/native_attacks.json",
+    "reports/native_skill_flow.json",
+    "reports/skill_xconf40.json",
+    "reports/self_skill_flow.json"
+  ],
+  "original_elf_sha256": "8199604d199b57ebe329725c9a624b85517f495f78c1dad745449684750e4677",
+  "verified_native_entrypoints": [
+    {
+      "name": "Hero::onButtonClicked",
+      "va": "0xe57918",
+      "source_phase": 20,
+      "role": "button handler; range and config guards; requests configured skill"
+    },
+    {
+      "name": "Entity::addSkill(configId)",
+      "va": "0xe46b7c",
+      "source_phase": 21,
+      "role": "config-family check, skill creation and handoff"
+    },
+    {
+      "name": "CSkill::CreateSkillBySkillConfigId",
+      "va": "0xe650b4",
+      "source_phase": 21,
+      "role": "chooses CSelfSkill for selector 10050"
+    },
+    {
+      "name": "CSelfSkill::CSelfSkill",
+      "va": "0xe6555c",
+      "source_phase": 41,
+      "role": "iterates third vector and creates function instances"
+    },
+    {
+      "name": "CSelfSkill::Init",
+      "va": "0xe657b0",
+      "source_phase": 41,
+      "role": "sets creator/target/context on constructed functions"
+    },
+    {
+      "name": "CSelfSkill::Update",
+      "va": "0xe65924",
+      "source_phase": 41,
+      "role": "updates active functions"
+    }
+  ],
+  "basic_skill": {
+    "id": 4010020,
+    "binding_id": 10039,
+    "button_code": 2,
+    "selector_id": 10050,
+    "creator_condition_ids": [],
+    "target_condition_ids": [],
+    "function_ids": [],
+    "enhancement_id": -1,
+    "configuration_instantiated_function_count": 0
+  },
+  "evidence_boundary": {
+    "confirmed": [
+      "Button-handler native symbol and addSkill path have been statically audited in previous phases",
+      "Skill creation switches on selector 10050",
+      "The 4010020 third vector is empty"
+    ],
+    "not_confirmed": [
+      "Exact in-game action after 4010020 instantiation",
+      "Whether a distinct triggered or chained skill implements the physical attack",
+      "Animation attack1/attack2/attack3 mapping to 4010020",
+      "Hitboxes, target selection at strike time, damage, cooldown and timing"
+    ],
+    "next_native_checks": [
+      "Trace configuration ID write/read into Hero button table and identify exact 4010020 handoff at runtime",
+      "Inspect Entity::addSkill(skillPtr) dispatch and lifecycle for functionless CSelfSkill",
+      "Inspect any button-release/hold handlers and event/register function paths",
+      "Inspect attack animation dispatch for animation-to-collider or damage event linkage",
+      "Produce ARM64 checkpoints with explicit VA and expected mnemonics before asserting any new edge"
+    ]
+  },
+  "gameplay_enabled": false,
+  "notes": "This report joins independently verified earlier evidence; it does not claim a new binary inspection or a newly proven damage path."
+}
