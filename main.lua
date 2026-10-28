@@ -1,16 +1,17 @@
 -- Bar-Lua | laboratório de engenharia reversa do BarbarQ 1.0.1811.
 -- NÃO é o jogo: apenas visualização fiel de dados originais decodificados.
-local modes = {"Mapas TMX", "Imagens", "Atlas .plist/.bplist", "Configurações", "Animações", "Cenas .csb", "ELF ARM64", "Fluxo ARM64", "Movimento ARM64"}
-local tabLabels = {"Mapas", "Imagens", "Atlas", "Config.", "Animações", "Cenas", "ELF", "Fluxo", "Mov."}
+local modes = {"Mapas TMX", "Imagens", "Atlas .plist/.bplist", "Configurações", "Animações", "Cenas .csb", "ELF ARM64", "Fluxo ARM64", "Movimento ARM64", "Entity / Box2D"}
+local tabLabels = {"Mapas", "Imagens", "Atlas", "Config.", "Animações", "Cenas", "ELF", "Fluxo", "Mov.", "Entid."}
 local animationView = require("src.animation_view")
 local sceneView = require("src.scene_view")
 local nativeView = require("src.native_view")
 local flowView = require("src.flow_view")
 local movementView = require("src.movement_view")
+local entityMoveView = require("src.entity_move_view")
 local sceneResources = require("src.scene_resources")
 local spriteGeometry = require("src.sprite_geometry")
 local mode, selected, search, zoom = 1, 1, "", 1
-local lists = {{}, {}, {}, {}, {}, {}, {}, {}, {}}
+local lists = {{}, {}, {}, {}, {}, {}, {}, {}, {}, {}}
 local maps, atlases, animations, scenes, nativeCatalog, flowCatalog = {}, {}, {}, {}, {}, {}
 local sceneResourceIndex = nil
 local imageIndex = {}
@@ -351,6 +352,7 @@ function love.load()
     for _, entry in ipairs(nativeCatalog) do lists[7][#lists[7]+1] = entry end
     for _, entry in ipairs(flowCatalog) do lists[8][#lists[8]+1] = entry end
     lists[9][1] = {name="Hero::move_update (vetores)"}
+    lists[10][1] = {name="Entity::move (Box2D)"}
     for _, path in ipairs(lists[2]) do
         imageIndex[path:gsub("^assets_original/", ""):lower()] = path:gsub("^assets_original/", "")
     end
@@ -417,6 +419,8 @@ function love.draw()
             put=put, background=background, small=small})
     elseif mode == 9 then
         movementView.draw(item, {x=x, y=y, w=pw, h=ph, put=put, background=background, small=small})
+    elseif mode == 10 then
+        entityMoveView.draw(item, {x=x, y=y, w=pw, h=ph, put=put, background=background, small=small})
     else
         local message = (mode == 1 or mode == 3) and "Sem dados preparados. Execute tools/preparar_recursos.py." or "Nenhum recurso encontrado. Extraia o APK para assets_original."
         put(message, x + 18, y + 40)
@@ -424,8 +428,9 @@ function love.draw()
 end
 
 function love.keypressed(key)
-    local n = key:match("^f([1-9])$")
-    if n then setMode(tonumber(n)); return end
+    local n = tonumber(key:match("^f(%d+)$"))
+    if n and n >= 1 and n <= #modes then setMode(n); return end
+    if mode == 10 and entityMoveView.keypressed(key) then return end
     if mode == 9 and movementView.keypressed(key) then return end
     local list = visibleList()
     if mode == 6 then
@@ -482,7 +487,7 @@ function love.textinput(text)
     if mode == 3 and (text == "[" or text == "]") then return end
     if mode == 5 and (text:lower() == "i" or text:lower() == "b" or text:lower() == "p") then return end
     if mode == 6 and (text:lower() == "g" or text:lower() == "v" or text:lower() == "t") then return end
-    if mode == 9 then return end
+    if mode == 9 or mode == 10 then return end
     if mode ~= 1 and #search < 80 and text:match("%g") then search = search .. text; selected = 1; resetImage(); if mode == 5 then animationView.reset() end; if mode == 6 then sceneView.reset() end end
 end
 
