@@ -2,6 +2,26 @@
 
 **Objetivo:** estudar um APK original do BarbarQ e reproduzir sua experiência no PC com **Lua e LÖVE2D**, sem emulador Android. Isto **não** é um jogo inspirado no BarbarQ. Os recursos recuperados servem de referência, mas portar a lógica original exige engenharia reversa adicional.
 
+## Fase 17 — filtros de contato Box2D (NÃO jogável)
+
+A biblioteca ARM64 original do BarbarQ 1.0.1811 foi analisada estaticamente, com verificação de SHA-256, endereços, tamanhos e padrões ARM64. Os novos relatórios (`reports/native_filters.json` e `.lua`) contêm apenas metadados, sem redistribuir código nativo.
+
+- **4 funções / 160 instruções:** `Entity::setCollidable(bool)`, `b2ContactFilter::ShouldCollide`, `b2Fixture::SetFilterData` e `config::hero::CollisionConfig::load`.
+- `Entity::setCollidable(true)` define categoria **1**, máscara **3**, grupo **0** no fixture acessado; `false` define categoria **0**, máscara **1**, grupo **0**.
+- O filtro de contato exige que **as duas máscaras** permitam as categorias da outra fixture. Grupos iguais e não-zero sobrepõem a regra: positivos permitem e negativos bloqueiam.
+- `SetFilterData` atualiza os campos físicos e toca proxies do broadphase. Isso não é integração de física nem resolução de colisão.
+- **F13 — Filtros Box2D** permite explorar a decisão em Lua. Teclas `A/B` alternam os filtros das fixtures, `G` alterna grupos 0/+1/-1, e `R` reinicia.
+- **58 testes da versão local passaram**, incluindo o analisador do ELF e a lógica Lua.
+
+Para reproduzir a auditoria, coloque sua própria cópia extraída da biblioteca ARM64 no caminho indicado e execute:
+
+```powershell
+py tools/analisar_filtros.py --so "lib/arm64-v8a/libcocos2dcpp.so" --manifest reports/native_arm64.json
+py -m unittest discover -s tests -v
+```
+
+**Limites:** a F13 não simula contatos, geometria, colisões nem movimentação real. Um resultado positivo em `ShouldCollide` não garante colisão: é apenas uma das condições. Não extrapolar o filtro de `setCollidable` aos demais tipos de entidades ou fixtures. A execução gráfica em Windows ainda não foi verificada.
+
 ## Fase 16 — inicialização de corpo físico e colisores (não jogável)
 
 A análise estática do **APK 1.0.1811**, vinculada ao SHA-256 do `libcocos2dcpp.so`, verificou duas funções AArch64: `Entity::InitB2Body` (51 instruções) e `Entity::InitCollision` (246 instruções). A localização e o tamanho foram confrontados com `.dynsym`; os padrões de instruções são auditados antes da geração dos relatórios. **Não é uma implementação funcional do Box2D.**
