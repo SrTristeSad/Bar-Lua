@@ -10,7 +10,7 @@ A biblioteca ARM64 original do BarbarQ 1.0.1811 foi analisada estaticamente, com
 - `Entity::setCollidable(true)` define categoria **1**, máscara **3**, grupo **0** no fixture acessado; `false` define categoria **0**, máscara **1**, grupo **0**.
 - O filtro de contato exige que **as duas máscaras** permitam as categorias da outra fixture. Grupos iguais e não-zero sobrepõem a regra: positivos permitem e negativos bloqueiam.
 - `SetFilterData` atualiza os campos físicos e toca proxies do broadphase. Isso não é integração de física nem resolução de colisão.
-- **F13 — Filtros Box2D** permite explorar a decisão em Lua. Teclas `A/B` alternam os filtros das fixtures, `G` alterna grupos 0/+1/-1, e `R` reinicia.
+- **F13 — Filtros Box2D** permite explorar a decisão em Lua. Teclas `A/B` alternam os filtros das fixtures, `G` alterna grupos 0/+1/-1, e `R` reinicia. Em teclados sem F13, use **Ctrl+F12** ou clique na aba superior.
 - **58 testes da versão local passaram**, incluindo o analisador do ELF e a lógica Lua.
 
 Para reproduzir a auditoria, coloque sua própria cópia extraída da biblioteca ARM64 no caminho indicado e execute:
