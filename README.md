@@ -2,6 +2,24 @@
 
 **Objetivo:** estudar um APK original do BarbarQ e reproduzir sua experiência no PC com **Lua e LÖVE2D**, sem emulador Android. Isto **não** é um jogo inspirado no BarbarQ. Os recursos recuperados servem de referência, mas portar a lógica original exige engenharia reversa adicional.
 
+## Fase 16 — inicialização de corpo físico e colisores (não jogável)
+
+A análise estática do **APK 1.0.1811**, vinculada ao SHA-256 do `libcocos2dcpp.so`, verificou duas funções AArch64: `Entity::InitB2Body` (51 instruções) e `Entity::InitCollision` (246 instruções). A localização e o tamanho foram confrontados com `.dynsym`; os padrões de instruções são auditados antes da geração dos relatórios. **Não é uma implementação funcional do Box2D.**
+
+- `InitB2Body` reutiliza o corpo se o ponteiro já existe; senão chama `b2World::CreateBody`. A coordenada inicial é dividida por **100.0** (valor de `float` lido do segmento ELF). Um argumento booleano pode acionar `b2Body::SetType`.
+- `InitCollision` discrimina os códigos de configuração **1, 2 e 3**, associados nesta função à criação de **fixture circular**, **polígono de quatro vértices** e **forma personalizada (polígonos gerados por `CustomShapeUtils`)**, respectivamente. As rotinas observadas chamam `CreateFixture` e `SetFixedRotation`, sob condições internas.
+- Os fatores `-0.005` e `+0.005` usados num ramo de polígono foram lidos diretamente dos segmentos ELF. Esses fatores não são necessariamente unidades universais do jogo.
+- **F12** mostra as evidências por função. Não processa colisões reais, filtros Box2D, máscaras, entidades controláveis ou partidas.
+
+Reproduza a investigação com a cópia local do APK previamente extraída:
+
+```bash
+python tools/analisar_colisores.py --so lib/arm64-v8a/libcocos2dcpp.so --manifest reports/native_arm64.json
+python -m unittest discover -s tests -q
+```
+
+O GitHub publica somente código e os metadados da investigação; **não contém** os binários extraídos, sprites nem APK original. No pacote local completo, pressione **F12** para abrir o novo painel. A execução gráfica real em Windows com LÖVE2D ainda não foi testada.
+
 ## Fase 15 — cadeia de contatos do Box2D (investigação estática; NÃO jogável)
 
 Analisados **8 métodos ARM64 e 457 instruções** da `libcocos2dcpp.so` fornecida com o APK 1.0.1811, com endereço, tamanho e SHA-256 obrigatoriamente conferidos. O analisador está em `tools/analisar_contatos.py` e produz `reports/native_contacts.json` e `reports/native_contacts.lua` **somente com metadados**, sem publicar código nativo.
