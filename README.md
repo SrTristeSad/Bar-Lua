@@ -2,6 +2,47 @@
 
 **Objetivo:** estudar um APK original do BarbarQ e reproduzir sua experiência no PC com **Lua e LÖVE2D**, sem emulador Android. Isto **não** é um jogo inspirado no BarbarQ. Os recursos recuperados servem de referência, mas portar a lógica original exige engenharia reversa adicional.
 
+## Fase 26 — o callback `onDied` e a rotina `dieLogic` são distintos
+
+**Nova evidência sobre morte (BarbarQ 1.0.1811).** Após `Hero::addHurtFromEnemy`
+zerar o HP, a chamada virtual pelo offset `+0x48` aponta, pelas **relocações
+originais da vtable** de `Hero`, para `Entity::onDied`, e **não** para
+`Hero::dieLogic`. A rotina `Entity::onDied` apenas grava o byte de estado
+`+0x1bc = 1`. O método `Hero::dieLogic` ocupa outro slot (`+0x98`) e
+executa trabalho adicional; **a relação temporal entre os dois métodos
+não foi comprovada**.
+
+- O analisador `tools/analisar_morte.py` valida SHA-256, endereços e tamanhos dos
+  símbolos, **29 checkpoints** de instruções em **4 funções/377 instruções**, e
+  os endereços reais das relocações de vtable de `Hero` e `Entity`. Gera
+  `reports/death_flow.json` e `reports/death_flow.lua`. Não desvia nem
+  executa a biblioteca nativa.
+- `Entity::dieLogic` limpa a cadeia de habilidades, adiciona um estado com
+  código observado `8`, zera indicadores e chama a rotina que registra o
+  jogador como não vivo.
+- `Hero::dieLogic` invoca `Entity::dieLogic`, `CSkillRandom::OnHeroDie`, atualiza
+  estatísticas e dispara um evento. Um núcleo matemático encontrado é
+  `perda = trunc((score_atual - score_antigo) * 0.75)`, em que `trunc` é
+  arredondamento **em direção a zero** na instrução `fcvtzs`. O escopo do
+  simulador limita-se a inteiros não negativos com `score_antigo <= score_atual`.
+- `src/death_rules.lua` reproduz **somente esse cálculo isolado** e o indicador
+  de `onDied`. A aba **Morte** (`Ctrl+N`) permite alterar números hipotéticos
+  sem alterar a cena controlável.
+- A investigação ainda **não demonstra** quem agenda `dieLogic` após `onDied`,
+  o momento da animação de morte, respawn ou as regras de recompensa. A fórmula
+  de pontuação de um ramo não equivale a uma regra universal dos modos de jogo.
+
+**Para validar:** use sua própria biblioteca Android extraída em
+`lib/arm64-v8a/libcocos2dcpp.so` e execute
+`python tools/analisar_morte.py`, seguido de
+`python -m unittest discover -s tests -q`.
+
+**Testes:** 102 testes automatizados aprovados. Execução gráfica do LÖVE2D
+no Windows **ainda não foi testada**. Os recursos do APK continuam fora do
+repositório público.
+
+---
+
 ## Fase 22 — rastreamento de alvos e referências de habilidades (sem dano jogável)
 
 O analisador `tools/rastrear_habilidades.py` indexa **72.765 registros** de 13 tabelas
@@ -484,10 +525,10 @@ Os seis parâmetros aparecem na configuração nativa nas posições `0x38`, `0x
 
 `tools/analisar_valores_vida.py` valida por **SHA-256**, tabela ELF e instruções ARM64 os métodos `Entity::getValueByType` (duas variantes) e `Hero::addHurtFromEnemy(int,int,bool)` do APK BarbarQ 1.0.1811. Foram verificadas **3 funções, 269 instruções e 44 checkpoints**. O analisador gera `reports/entity_damage_flow.json` e `reports/entity_damage_flow.lua` sem carregar a biblioteca no jogo.
 
-- O campo de HP atual fica no deslocamento `+0x314` de `Hero`. Quando HP é positivo, a rotina subtrai dano; se o novo HP for positivo, grava o resultado. Se chegar a zero ou menos, grava **zero** e o identificador da origem do golpe em `+0x370`, chama uma **rotina virtual** (cujo comportamento interno ainda não foi estabelecido) e limita o dano contabilizado ao HP anterior.
+- O campo de HP atual fica no deslocamento `+0x314` de `Hero`. Quando HP é positivo, a rotina subtrai dano; se o novo HP for positivo, grava o resultado. Se chegar a zero ou menos, grava **zero** e o identificador da origem do golpe em `+0x370`, chama uma **rotina virtual** (resolvida na Fase 26 como `Entity::onDied`) e limita o dano contabilizado ao HP anterior.
 - Há atualizações **condicionais** de estatísticas de dano recebido e infligido, dependentes de gerenciadores de dados e da presença da entidade atacante; também há emissão de evento e possível interrupção de combo. Os eventos, a rotina virtual e as estatísticas **não foram reimplementados**.
 - `getValueByType` usa a razão percentual previamente confirmada na Fase 24. O ramo contextual reconhece identificadores especiais `1002` e `1003`; as variantes possuem um seletor de operação com casos `0` a `3` para adição, subtração, multiplicação e divisão, ignorando divisão quando o divisor é zero. As condições de quais entidades/atributos alimentar essas operações ainda exigem investigação.
 - **Módulo de pesquisa:** `src/hero_hurt.lua` implementa apenas o ramo aritmético observado para **HP inteiro positivo** e **dano inteiro não negativo**. Os efeitos colaterais nativos e casos fora desse domínio são expressamente recusados. A aba **Vida** (`Ctrl+V`) permite testar HP e dano **fictícios**, sem aplicar qualquer dano na cena controlável.
 - Os títulos das 18 abas foram abreviados para que o seletor superior fique legível em 1280px. O restante das abas e a cena Ctrl+P foram preservados.
 
-**Reprodução:** `python tools/analisar_valores_vida.py` (necessita da biblioteca original local), seguido de `python -m unittest discover -s tests -q`. O pacote de código não inclui DLLs, SOs Android nem recursos proprietários. A ligação da habilidade `4010020` à fórmula de dano e o efeito real da rotina virtual de morte continuam não confirmados. Nenhum ataque causa dano real; a interface gráfica Windows/LÖVE ainda carece de validação manual.
+**Reprodução:** `python tools/analisar_valores_vida.py` (necessita da biblioteca original local), seguido de `python -m unittest discover -s tests -q`. O pacote de código não inclui DLLs, SOs Android nem recursos proprietários. A ligação da habilidade `4010020` à fórmula de dano e o agendamento da rotina separada `dieLogic` e seus efeitos completos continuam não confirmados. Nenhum ataque causa dano real; a interface gráfica Windows/LÖVE ainda carece de validação manual.

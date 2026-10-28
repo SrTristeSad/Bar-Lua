@@ -1,0 +1,63 @@
+{
+  "phase": 26,
+  "apk_version": "1.0.1811",
+  "library_sha256": "8199604d199b57ebe329725c9a624b85517f495f78c1dad745449684750e4677",
+  "functions": [
+    {
+      "name": "Hero::addHurtFromEnemy",
+      "address": "0xe57678",
+      "instructions": 89,
+      "checks": 5
+    },
+    {
+      "name": "Entity::onDied",
+      "address": "0xe4b554",
+      "instructions": 3,
+      "checks": 3
+    },
+    {
+      "name": "Entity::dieLogic",
+      "address": "0xe4d1f8",
+      "instructions": 185,
+      "checks": 7
+    },
+    {
+      "name": "Hero::dieLogic",
+      "address": "0xe5988c",
+      "instructions": 100,
+      "checks": 14
+    }
+  ],
+  "total_instructions": 377,
+  "total_checks": 29,
+  "virtual_slots": {
+    "Hero": {
+      "vtable": "0x24be6c0",
+      "vptr_offset": "0x10",
+      "damage_callback_offset": "0x48",
+      "damage_callback_relocation": "0x24be718",
+      "damage_callback_symbol": "_ZN6Entity6onDiedEv",
+      "die_logic_offset": "0x98",
+      "die_logic_relocation": "0x24be768",
+      "die_logic_symbol": "_ZN4Hero8dieLogicEv"
+    },
+    "Entity": {
+      "vtable": "0x24bdae0",
+      "vptr_offset": "0x10",
+      "damage_callback_offset": "0x48",
+      "damage_callback_relocation": "0x24bdb38",
+      "damage_callback_symbol": "_ZN6Entity6onDiedEv",
+      "die_logic_offset": "0x98",
+      "die_logic_relocation": "0x24bdb88",
+      "die_logic_symbol": "_ZN6Entity8dieLogicEv"
+    }
+  },
+  "observations": {
+    "first_on_died": "A chamada virtual imediata por dano fatal usa o offset +0x48 e resolve Entity::onDied, inclusive na vtable Hero.",
+    "on_died": "Entity::onDied apenas define o byte +0x1bc como 1. Não executa sozinho a lógica da morte.",
+    "die_logic": "Entity::dieLogic limpa cadeia de habilidades, altera estado e marca jogador não vivo; Hero::dieLogic acrescenta limpeza de skills aleatórias, estatísticas, redução de score e evento.",
+    "score_core": "Hero::dieLogic calcula perda truncando para zero 75% da diferença entre pontuação atual e pontuação antiga antes de gravar a nova pontuação.",
+    "score_scope": "Modelo apenas para pontuação inteira não negativa com pontuação anterior <= atual; sem reproduzir regras de modo, modificadores, morte ou eventos."
+  },
+  "limits": "Não está confirmado quem agenda/chama dieLogic após onDied, nem o ciclo completo de animação de morte, respawn, recompensas ou dano em batalha."
+}

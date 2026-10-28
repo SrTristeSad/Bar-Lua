@@ -1,0 +1,27 @@
+package.path='./?.lua;./?/init.lua;'..package.path
+local R=require('src.death_rules')
+local function check(current,old,loss,new)
+    local got,err=R.score_preview(current,old)
+    assert(got,err)
+    assert(got.loss==loss and got.score_after==new)
+    assert(got.native_events_executed==false and got.death_logic_executed==false)
+end
+check(240,120,90,150)
+check(101,100,0,101)
+check(105,100,3,102)
+check(100,0,75,25)
+check(0,0,0,0)
+check(200,200,0,200)
+check(2147483647,2147483647,0,2147483647)
+for _,pair in ipairs({{20,21},{-1,0},{1.2,1},{0,-1},{0,3},{2147483648,0}}) do
+    assert(R.score_preview(pair[1],pair[2])==nil)
+end
+local flag=R.on_died_flag_preview()
+assert(flag.flag_offset=='0x1bc' and flag.flag_value==1)
+assert(flag.actual_death_logic_executed==false)
+local view=require('src.death_view')
+assert(view.keypressed('right') and view.keypressed('left'))
+assert(view.keypressed('up') and view.keypressed('down'))
+assert(view.keypressed('r') and not view.keypressed('x'))
+assert(view.current==240 and view.old==120)
+print('F26 DEATH RULES LUA OK')
