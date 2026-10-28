@@ -1,0 +1,59 @@
+{
+  "phase": 25,
+  "apk_version": "1.0.1811",
+  "library_sha256": "8199604d199b57ebe329725c9a624b85517f495f78c1dad745449684750e4677",
+  "functions": [
+    {
+      "name": "Entity::getValueByType (contextual)",
+      "symbol": "_ZN6Entity14getValueByTypeEN6config5skill9ValueTypeEfPKS_PK6CSkillPKNS1_9OperationE",
+      "address": "0xe45d5c",
+      "bytes": 352,
+      "instructions": 88,
+      "checks": 13
+    },
+    {
+      "name": "Entity::getValueByType (const)",
+      "symbol": "_ZNK6Entity14getValueByTypeEN6config5skill9ValueTypeEfPKNS1_9OperationE",
+      "address": "0xe49afc",
+      "bytes": 368,
+      "instructions": 92,
+      "checks": 13
+    },
+    {
+      "name": "Hero::addHurtFromEnemy",
+      "symbol": "_ZN4Hero16addHurtFromEnemyEiib",
+      "address": "0xe57678",
+      "bytes": 356,
+      "instructions": 89,
+      "checks": 18
+    }
+  ],
+  "total_instructions": 269,
+  "total_checks": 44,
+  "hp_observations": {
+    "hp_offset": "0x314",
+    "attacker_key_offset_on_lethal": "0x370",
+    "hp_branch": "Se HP atual >= 1 e (HP - dano) > 0: armazena HP - dano. Caso contrario, se HP >= 1: armazena 0, armazena identificador do agressor, chama callback virtual e limita o dano contabilizado ao HP anterior.",
+    "accounting": "Se existirem registros apropriados, incrementa dano recebido e, quando a entidade atacante for localizada, dano infligido pelo valor efetivamente contabilizado.",
+    "events": "Se atacante existe, emite evento; flag de entrada pode interromper combo, sem comprovar outros efeitos."
+  },
+  "value_observations": {
+    "ratio": "A divisão por constante percentual ocorre nas duas variantes; constante 100.0 comprovada separadamente na F24.",
+    "contextual_special_types": [
+      1002,
+      1003
+    ],
+    "operation_types": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "operation_zero_divisor": "Divisão ignorada quando o divisor comparado é zero.",
+    "const_entity_stat_range": [
+      101,
+      120
+    ]
+  },
+  "limits": "O simulador demonstra somente a subtração de HP para herói vivo e dano inteiro não negativo. Não executa callbacks virtuais, eventos, estatísticas, efeitos, IA ou morte real. A cadeia de 4010020 para GetDamageValue permanece sem prova."
+}

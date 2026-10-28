@@ -478,3 +478,16 @@ Os seis parâmetros aparecem na configuração nativa nas posições `0x38`, `0x
 - **Testes:** `python -m unittest discover -s tests -p 'test_*.py'` valida o binário original, o resultado Lua e as regressões existentes.
 
 **Limites obrigatórios:** os valores concretos do bárbaro e da habilidade `4010020` não foram estabelecidos, nem o vínculo dessa habilidade ao cálculo, os modificadores de alvo, distribuição do RNG, arredondamento ou timing de acertos. A cena `Ctrl+P` continua **sem dano, inimigos ou combate funcional**. A execução gráfica real em Windows ainda está pendente de teste.
+
+
+## Fase 25 — transição de HP e resolução de valores (pesquisa isolada)
+
+`tools/analisar_valores_vida.py` valida por **SHA-256**, tabela ELF e instruções ARM64 os métodos `Entity::getValueByType` (duas variantes) e `Hero::addHurtFromEnemy(int,int,bool)` do APK BarbarQ 1.0.1811. Foram verificadas **3 funções, 269 instruções e 44 checkpoints**. O analisador gera `reports/entity_damage_flow.json` e `reports/entity_damage_flow.lua` sem carregar a biblioteca no jogo.
+
+- O campo de HP atual fica no deslocamento `+0x314` de `Hero`. Quando HP é positivo, a rotina subtrai dano; se o novo HP for positivo, grava o resultado. Se chegar a zero ou menos, grava **zero** e o identificador da origem do golpe em `+0x370`, chama uma **rotina virtual** (cujo comportamento interno ainda não foi estabelecido) e limita o dano contabilizado ao HP anterior.
+- Há atualizações **condicionais** de estatísticas de dano recebido e infligido, dependentes de gerenciadores de dados e da presença da entidade atacante; também há emissão de evento e possível interrupção de combo. Os eventos, a rotina virtual e as estatísticas **não foram reimplementados**.
+- `getValueByType` usa a razão percentual previamente confirmada na Fase 24. O ramo contextual reconhece identificadores especiais `1002` e `1003`; as variantes possuem um seletor de operação com casos `0` a `3` para adição, subtração, multiplicação e divisão, ignorando divisão quando o divisor é zero. As condições de quais entidades/atributos alimentar essas operações ainda exigem investigação.
+- **Módulo de pesquisa:** `src/hero_hurt.lua` implementa apenas o ramo aritmético observado para **HP inteiro positivo** e **dano inteiro não negativo**. Os efeitos colaterais nativos e casos fora desse domínio são expressamente recusados. A aba **Vida** (`Ctrl+V`) permite testar HP e dano **fictícios**, sem aplicar qualquer dano na cena controlável.
+- Os títulos das 18 abas foram abreviados para que o seletor superior fique legível em 1280px. O restante das abas e a cena Ctrl+P foram preservados.
+
+**Reprodução:** `python tools/analisar_valores_vida.py` (necessita da biblioteca original local), seguido de `python -m unittest discover -s tests -q`. O pacote de código não inclui DLLs, SOs Android nem recursos proprietários. A ligação da habilidade `4010020` à fórmula de dano e o efeito real da rotina virtual de morte continuam não confirmados. Nenhum ataque causa dano real; a interface gráfica Windows/LÖVE ainda carece de validação manual.
