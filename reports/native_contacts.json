@@ -1,0 +1,114 @@
+{
+  "version": "1.0.1811",
+  "library_sha256": "8199604d199b57ebe329725c9a624b85517f495f78c1dad745449684750e4677",
+  "source": "ELF ARM64: análise estática verificada, não execução",
+  "functions": [
+    {
+      "signature": "wildsContactListener::PreSolve(b2Contact*, b2Manifold const*)",
+      "address": "0xe43928",
+      "size_bytes": 4,
+      "instructions": 1,
+      "direct_calls": 0,
+      "indirect_calls": 0,
+      "verified_patterns": []
+    },
+    {
+      "signature": "b2World::Step(float, int, int)",
+      "address": "0x1b70eac",
+      "size_bytes": 508,
+      "instructions": 127,
+      "direct_calls": 13,
+      "indirect_calls": 0,
+      "verified_patterns": [
+        "collide",
+        "find_new_contacts",
+        "nonpositive_step_guard",
+        "solve",
+        "solve_toi"
+      ]
+    },
+    {
+      "signature": "wildsContactListener::BeginContact(b2Contact*)",
+      "address": "0xe438c0",
+      "size_bytes": 100,
+      "instructions": 25,
+      "direct_calls": 1,
+      "indirect_calls": 0,
+      "verified_patterns": [
+        "call_process_contact",
+        "contact_vector",
+        "first_contact_gate",
+        "second_contact_gate",
+        "tail_process_contact"
+      ]
+    },
+    {
+      "signature": "wildsContactListener::EndContact(b2Contact*)",
+      "address": "0xe43924",
+      "size_bytes": 4,
+      "instructions": 1,
+      "direct_calls": 0,
+      "indirect_calls": 0,
+      "verified_patterns": []
+    },
+    {
+      "signature": "Entity::ProcessContact(b2Vec2)",
+      "address": "0xe4b574",
+      "size_bytes": 208,
+      "instructions": 52,
+      "direct_calls": 4,
+      "indirect_calls": 0,
+      "verified_patterns": [
+        "atan2_degrees",
+        "cos_degrees",
+        "secondary_gate",
+        "sin_degrees",
+        "writes_angle"
+      ]
+    },
+    {
+      "signature": "b2Contact::Update(b2ContactListener*)",
+      "address": "0x1b726d8",
+      "size_bytes": 592,
+      "instructions": 148,
+      "direct_calls": 2,
+      "indirect_calls": 4,
+      "verified_patterns": [
+        "callback_indirect",
+        "touching_transition"
+      ]
+    },
+    {
+      "signature": "wildsContactListener::PostSolve(b2Contact*, b2ContactImpulse const*)",
+      "address": "0xe4392c",
+      "size_bytes": 4,
+      "instructions": 1,
+      "direct_calls": 0,
+      "indirect_calls": 0,
+      "verified_patterns": []
+    },
+    {
+      "signature": "b2ContactManager::Collide()",
+      "address": "0x1b6dcc8",
+      "size_bytes": 408,
+      "instructions": 102,
+      "direct_calls": 3,
+      "indirect_calls": 1,
+      "verified_patterns": [
+        "update_contact"
+      ]
+    }
+  ],
+  "observations": [
+    "b2World::Step contém chamadas a FindNewContacts, Collide, Solve e SolveTOI; alguns caminhos são condicionais.",
+    "b2ContactManager::Collide chama b2Contact::Update.",
+    "b2Contact::Update inclui callbacks indiretos via listener.",
+    "wildsContactListener::BeginContact consulta o indicador +0x1c1 e pode encaminhar b2Vec2 a Entity::ProcessContact.",
+    "EndContact, PreSolve e PostSolve de wildsContactListener são somente RET nesta versão.",
+    "Entity::ProcessContact usa funções trigonométricas e grava ângulo; não é evidência de dano."
+  ],
+  "limitations": [
+    "Não reproduz Box2D, geometria de colisores, resolução de contatos ou rede.",
+    "Específico da versão confirmada por SHA-256."
+  ]
+}
