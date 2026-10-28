@@ -1,0 +1,80 @@
+{
+  "phase": 28,
+  "apk_version": "1.0.1811",
+  "library_sha256": "8199604d199b57ebe329725c9a624b85517f495f78c1dad745449684750e4677",
+  "functions": [
+    {
+      "name": "Hero::reInit",
+      "address": "0xe569f0",
+      "bytes": 1432,
+      "instructions": 358,
+      "checks": 36
+    },
+    {
+      "name": "Hero::InitSkillAndAttri",
+      "address": "0xe57810",
+      "bytes": 184,
+      "instructions": 46,
+      "checks": 5
+    },
+    {
+      "name": "Hero::PlayerRestartGame",
+      "address": "0xe57980",
+      "bytes": 172,
+      "instructions": 43,
+      "checks": 5
+    }
+  ],
+  "total_instructions": 447,
+  "total_checks": 46,
+  "constants": {
+    "config_level_stride": 10000,
+    "config_id_offset": -10000
+  },
+  "simple_delta_fields": [
+    {
+      "entity_offset": "0xc0",
+      "config_offset": "0x38"
+    },
+    {
+      "entity_offset": "0x32c",
+      "config_offset": "0x3c"
+    },
+    {
+      "entity_offset": "0x330",
+      "config_offset": "0x40"
+    },
+    {
+      "entity_offset": "0x310",
+      "config_offset": "0x44"
+    },
+    {
+      "entity_offset": "0x314",
+      "config_offset": "0x44"
+    },
+    {
+      "entity_offset": "0x328",
+      "config_offset": "0x48"
+    },
+    {
+      "entity_offset": "0x318",
+      "config_offset": "0x4c"
+    },
+    {
+      "entity_offset": "0x31c",
+      "config_offset": "0x4c"
+    },
+    {
+      "entity_offset": "0x1b8",
+      "config_offset": "0x50"
+    }
+  ],
+  "facts": {
+    "two_paths": "reInit(level, full) com full=true chama Hero::init e ReimportWithBringData; full=false chama setLevel e aplica diferença de configurações.",
+    "config_keys": "ID da configuração do nível: baseId + level*10000 -10000; configuração anterior usa o valor do campo +0x180.",
+    "skills": "Ramo diferencial divide listas numéricas da configuração em 0x58 e cria/adiciona habilidades ausentes na lista anterior.",
+    "conditional": "Blocos com flag +0x204, configuração +0x88 e listas de habilidades dependem de dados não modelados.",
+    "restart": "PlayerRestartGame é separado de reborn: limpa +0x190, redefine atacante +0x370, salva marco +0x574 do gerenciador e emite evento."
+  },
+  "limits": "Modelo Lua reproduz apenas aritmética de campos verificados, sem semântica definitiva dos atributos, flags opcionais, skills, eventos, física ou respawn real."
+}
