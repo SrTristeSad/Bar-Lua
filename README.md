@@ -2,6 +2,26 @@
 
 **Objetivo:** estudar um APK original do BarbarQ e reproduzir sua experiência no PC com **Lua e LÖVE2D**, sem emulador Android. Isto **não** é um jogo inspirado no BarbarQ. Os recursos recuperados servem de referência, mas portar a lógica original exige engenharia reversa adicional.
 
+## Fase 15 — cadeia de contatos do Box2D (investigação estática; NÃO jogável)
+
+Analisados **8 métodos ARM64 e 457 instruções** da `libcocos2dcpp.so` fornecida com o APK 1.0.1811, com endereço, tamanho e SHA-256 obrigatoriamente conferidos. O analisador está em `tools/analisar_contatos.py` e produz `reports/native_contacts.json` e `reports/native_contacts.lua` **somente com metadados**, sem publicar código nativo.
+
+- `b2World::Step(float,int,int)` contém chamadas a `b2ContactManager::FindNewContacts`, `Collide`, `Solve` e `SolveTOI` (nem todos os caminhos são executados sempre).
+- `b2ContactManager::Collide` chama `b2Contact::Update`; este faz chamadas indiretas de listener, condicionadas ao estado do contato.
+- O listener **específico do jogo** `wildsContactListener::BeginContact` verifica, por entidade, um indicador no offset `0x1c1`. Quando habilitado, encaminha um vetor do contato a `Entity::ProcessContact`. O listener analisa ambos os lados separadamente.
+- `EndContact`, `PreSolve` e `PostSolve` da classe `wildsContactListener` estão compilados apenas como `ret` nesta versão.
+- `Entity::ProcessContact(b2Vec2)` contém `cosDeg`, `sinDeg` e `atan2Deg`, e grava um campo inteiro de orientação. **Não é prova de cálculo de dano ou de resposta física completa.**
+- **Nova aba F11 — Contatos ARM64:** selecionar funções e consultar os metadados de fluxo, sem simular colisões.
+
+Executar novamente a auditoria a partir de sua própria cópia do APK:
+
+```powershell
+py tools/analisar_contatos.py --apk "caminho\para\barbarq.apk"
+py -m unittest discover -s tests -v
+```
+
+**Limitações:** não foram reproduzidos integrador físico, filtros de colisão, geometria dos corpos, resolução de contatos, frequência de frames ou mensagens de rede. As chamadas listadas são evidências estáticas; não demonstram que foram executadas em uma partida. A execução gráfica no Windows ainda não foi testada.
+
 ## Fase 14 — Entity::move / Box2D (laboratório; NÃO jogável)
 
 **Base verificável:** a auditoria estática de `Entity::move(float,float)` na biblioteca ARM64
