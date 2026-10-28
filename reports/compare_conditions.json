@@ -1,0 +1,114 @@
+{
+  "phase": 37,
+  "apk_version": "1.0.1811",
+  "elf_sha256": "8199604d199b57ebe329725c9a624b85517f495f78c1dad745449684750e4677",
+  "functions": [
+    {
+      "name": "SkillEntity::GetCreatorResult",
+      "start": "0xe44f90",
+      "bytes": 8,
+      "verified_instructions": 2,
+      "checkpoints": 1
+    },
+    {
+      "name": "SkillEntity::GetTargetResult",
+      "start": "0xe44f98",
+      "bytes": 156,
+      "verified_instructions": 39,
+      "checkpoints": 11
+    },
+    {
+      "name": "SkillEntity::Init",
+      "start": "0xe45034",
+      "bytes": 8,
+      "verified_instructions": 2,
+      "checkpoints": 1
+    },
+    {
+      "name": "Compare::GetCreatorResult",
+      "start": "0xe44a60",
+      "bytes": 124,
+      "verified_instructions": 31,
+      "checkpoints": 5
+    },
+    {
+      "name": "Compare::GetTargetResult",
+      "start": "0xe44d68",
+      "bytes": 252,
+      "verified_instructions": 63,
+      "checkpoints": 7
+    },
+    {
+      "name": "Compare::GetResult",
+      "start": "0xe44adc",
+      "bytes": 596,
+      "verified_instructions": 149,
+      "checkpoints": 20
+    },
+    {
+      "name": "Compare::Operate",
+      "start": "0xe44ee0",
+      "bytes": 76,
+      "verified_instructions": 19,
+      "checkpoints": 6
+    },
+    {
+      "name": "Compare::GetTargetResult(no-arg)",
+      "start": "0xe44e64",
+      "bytes": 124,
+      "verified_instructions": 31,
+      "checkpoints": 1
+    }
+  ],
+  "verified_instructions": 336,
+  "checkpoints": 52,
+  "jump_tables": 4,
+  "ratio": 100.0,
+  "compare_epsilon": 9.999999747378752e-05,
+  "config_tables": {
+    "conditionskillentitytype": {
+      "records": 4,
+      "sha256": "ce34067c6f082965b402e485a318c95134183d9dced8c8d0c36808f32def3cf6",
+      "cases": [
+        {
+          "id": 10044,
+          "contain": 4,
+          "mode": 1
+        },
+        {
+          "id": 20044,
+          "contain": 3,
+          "mode": 3
+        },
+        {
+          "id": 30044,
+          "contain": 3,
+          "mode": 4
+        },
+        {
+          "id": 40044,
+          "contain": 4,
+          "mode": 3
+        }
+      ]
+    },
+    "conditionvaluecompare": {
+      "records": 1406,
+      "sha256": "7a013fa6e0ce953d5f60873824d03796457d85a31d70de6e27ee23623ebca24a"
+    }
+  },
+  "confirmed_rules": [
+    "SkillEntity GetCreatorResult retorna true sem avaliacao adicional.",
+    "SkillEntity GetTargetResult: modo 1 compara os IDs do CSkillEntity; modo 3 compara o campo +0x30 do Entity de destino com +0x188 do Entity vinculado ao criador.",
+    "SkillEntity: ContainType 3 preserva igualdade; demais valores invertem o resultado; modos desconhecidos retornam ContainType==3.",
+    "Compare GetResult avalia ValueType nos dois Entity, normaliza valores por /100, trata sentinela -1 como falha e aplica duas operacoes opcionais.",
+    "Compare: seis comparadores (aproximadamente igual/diferente, >, >=, <, <=) via tabela ARM64, com tolerancia extraida do ELF.",
+    "Operate: aplica + - * / sobre operando percentual, para codigos 0..3; outros codigos retornam o valor original."
+  ],
+  "limits": [
+    "Nao interpreta automaticamente todos os 1406 registros de comparevalue; seus operandos devem ser resolvidos por SParseValueInfo e Entity::getValueByType.",
+    "Nao foi vinculada uma condicao a habilidade 4010020.",
+    "Nao existe combate real, alvo final, hitbox nem aplicacao de dano.",
+    "Ponteiros e chamadas sem verificacao NULL do original nao sao simulados como acesso inseguro."
+  ]
+}

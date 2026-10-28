@@ -961,3 +961,60 @@ golpes ou dano. A interface LÖVE no Windows ainda não foi validada manualmente
 **Teste focal:** `python -m unittest tests.test_concrete_conditions_phase36 -v`.
 **Auditoria:** `python tools/analisar_condicoes_concretas.py` com o ELF
 original instalado em `lib/arm64-v8a/` (mantido fora do repositório).
+
+---
+
+## Fase 37 — relações entre entidades e comparação numérica (somente investigação)
+
+Nesta fase, o estudo estático de `libcocos2dcpp.so` (BarbarQ **1.0.1811**)
+foi ampliado para `CSkillEntityTypeCondition` e `CCompareValueCondition`.
+O analisador `tools/analisar_comparacoes.py` confere o SHA-256 do ELF, símbolos,
+endereços, instruções ARM64, **quatro tabelas de saltos** e constantes lidas
+de segmentos ELF originais. Os relatórios estão em
+`reports/compare_conditions.json` e `reports/compare_conditions.lua`.
+
+### Regras comprovadas
+
+- `CSkillEntityTypeCondition::GetCreatorResult` retorna verdadeiro.
+- `CSkillEntityTypeCondition::GetTargetResult` usa dois caminhos principais:
+  modo `1`, comparação dos IDs internos das instâncias `CSkillEntity`; modo
+  `3`, comparação de um campo `Entity +0x30` no candidato com `Entity +0x188`
+  na entidade associada ao criador. `ContainType == 3` preserva igualdade;
+  outros valores invertem o resultado. Outros modos retornam apenas o teste
+  `ContainType == 3`. O modelo recebe esses valores **já resolvidos**.
+- `CCompareValueCondition::GetResult` combina valores retornados por
+  `SParseValueInfo::GetValue` / `Entity::getValueByType` e, opcionalmente,
+  modifica os dois operandos antes da comparação. O valor sentinela `-1`
+  interrompe o cálculo com resultado falso.
+- O comparador utiliza os códigos `3` (igualdade com tolerância), `4`
+  (diferença maior que a tolerância), `5` (`>`), `6` (`>=`), `7` (`<`) e
+  `8` (`<=`). A constante de tolerância lida do ELF vale aproximadamente
+  **0,0001** (`9.999999747378752e-05`).
+- `CCompareValueCondition::Operate` usa um parâmetro convertido por **/100**,
+  com operações `0` soma, `1` subtração, `2` multiplicação e `3` divisão.
+  A demonstração protege a divisão por zero, sem alegar que o executável
+  original faria esse tratamento de erro.
+
+### Dados originais e implementação
+
+Foram identificados **quatro registros** em
+`config.skill.conditionskillentitytype.txt` e **1.406 registros** em
+`config.skill.conditionvaluecompare.txt`. Os hashes das tabelas são fixados
+no analisador; os nomes e o conteúdo integral das tabelas **não** são
+publicados no repositório. As configurações do segundo arquivo incluem
+estruturas complexas que **não são automaticamente interpretadas nesta fase**.
+
+`src/compare_conditions.lua` é um modelo puro com entradas numéricas já
+resolvidas, sem acessar a memória real do jogo. A aba **Comparações (`Ctrl+Y`)**
+mostra 12 exemplos. Setas alternam os casos e `R` reinicia. As 26 abas
+anteriores e a cena controlável (`Ctrl+P`) foram preservadas.
+
+**Limites:** os exemplos não demonstram associação com o ataque básico
+`4010020`, não recuperam todos os `SParseValueInfo`, não selecionam um alvo
+final e não aplicam dano. A interface gráfica ainda não foi validada em
+Windows real; os testes são automatizados em Python/Lua.
+
+**Reprodução:** `python tools/analisar_comparacoes.py` com o ELF original
+presente em `lib/arm64-v8a/`; `python -m unittest
+ tests.test_compare_conditions_phase37 -v`; `luatex --luaonly
+ tests/test_compare_conditions.lua`.

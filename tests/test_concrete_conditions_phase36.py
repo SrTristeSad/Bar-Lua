@@ -69,6 +69,6 @@ class ConcreteConditionsTests(unittest.TestCase):
         self.assertIn('lists[26][1]',main)
         self.assertIn('conditionView.draw(conditionReport',main)
         self.assertIn('setMode(14)',main)
-        self.assertEqual(main.split('local lists = ',1)[1].split('\n',1)[0].count('{}'),26)
+        self.assertGreaterEqual(main.split('local lists = ',1)[1].split('\n',1)[0].count('{}'),26)
 
 if __name__=='__main__':unittest.main()
