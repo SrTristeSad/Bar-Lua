@@ -1,0 +1,35 @@
+{
+  "version": "1.0.1811",
+  "library_sha256": "8199604d199b57ebe329725c9a624b85517f495f78c1dad745449684750e4677",
+  "function": "Entity::move(float, float)",
+  "virtual_address": "0xe4a88c",
+  "size_bytes": 236,
+  "instructions": 59,
+  "verified_patterns": 21,
+  "float_constants": {
+    "negative_epsilon": -9.999999747378752e-05,
+    "positive_epsilon": 9.999999747378752e-05,
+    "transform_divisor": 30.0
+  },
+  "body_offsets_hex": {
+    "entity_body": "0x28",
+    "body_type": "0x0",
+    "state_flags": "0x4",
+    "position_xy": "0xc",
+    "rotation_angle": "0x38",
+    "velocity_xy": "0x40",
+    "awake_timer": "0xac"
+  },
+  "control_flow": [
+    "Bit 5 set: type==0 exits; otherwise stores x/y at b2Body+0x40.",
+    "On a nonzero movement when state bit 1 was clear, sets bit 1 and clears timer at +0xac.",
+    "Bit 5 clear: x/y smaller than about 0.0001 both in magnitude exits.",
+    "Otherwise new_position=old_position+(x/30,y/30), then calls b2Body::SetTransform with the original angle."
+  ],
+  "limitations": [
+    "State flags and body type are raw values; gameplay meaning requires additional evidence.",
+    "This does not implement Box2D stepping, contacts, collisions, velocity integration or network synchronization.",
+    "The Lua research model can differ in float32 rounding at threshold boundaries.",
+    "Only the SHA-256-verified APK 1.0.1811 is covered."
+  ]
+}
