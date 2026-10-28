@@ -560,3 +560,105 @@ Há ramos opcionais observados em `Hero+0x204` e no ponteiro da configuração `
 **Interface:** nova aba **ReInit**, com atalho `Ctrl+I`; as setas modificam um **exemplo fictício** de nível e delta e `R` restaura o exemplo. A cena experimental `Ctrl+P` e as vinte abas anteriores são preservadas. **Nenhum atributo do herói jogável é alterado pelo demonstrador.**
 
 **Reprodução:** usando sua própria extração original `lib/arm64-v8a/libcocos2dcpp.so`, execute `python tools/analisar_reinit.py` e `python -m unittest discover -s tests -p 'test_*.py' -q`. Para verificação de sintaxe Lua, use `luatex --luaonly`. O binário Android e os recursos originais são mantidos fora do GitHub público. A execução real do aplicativo LÖVE2D no Windows ainda não foi testada, e o combate, as regras definitivas de nivelamento e o renascimento jogável permanecem incompletos.
+
+## Fase 29 — Catálogo de progressão de atributos do APK (inspeção, não combate)
+
+A auditoria cruza duas fontes da versão **1.0.1811**: as tabelas
+`config.hero.heroconfig.txt` e `config.hero.entityconfig.txt` e os
+opcodes ARM64 em `Hero::init`, `Hero::reInit` e `Hero::getValueByType`.
+
+- **1.239** registros de HeroConfig e **2.734** registros de EntityConfig
+  foram lidos, com prefixos de comprimento UTF-8 validados.
+- **435** configurações iniciais distintas possuem correspondência direta
+  em HeroConfig. Destas, **27** apresentam uma sequência de mais de um nível
+  com o mesmo nome, totalizando **832** registros de nível nesses grupos.
+  As outras referências de entidade **não são necessariamente corrompidas**:
+  podem apontar para outras classes, variantes ou convenções de ID.
+- O personagem bárbaro (`EntityConfig 210000`, base `HeroConfig 210001`)
+  tem os IDs `210001`, `220001`, `230001` nos três primeiros níveis.
+  A primeira posição numérica candidata à posição `HeroConfig +0x38`
+  assume os valores brutos **195**, **200** e **205**.
+- `Hero::init` carrega os campos `HeroConfig +0x38..+0x54`, e o caminho
+  incremental de `Hero::reInit` aplica diferenças de configurações aos
+  campos internos correspondentes. `Hero::getValueByType` consulta diversos
+  campos para retornar valores do herói. O auditor **verifica as instruções,
+  endereços e símbolos** desses três métodos (696 instruções ARM64,
+  34 checkpoints), além do SHA-256 do ELF original.
+
+**Limite da identificação:** a associação entre a ordem dos números
+no arquivo `.txt` e os offsets do `HeroConfig` é **posicional**, ainda não
+confirmada por um esquema serializado da configuração. A semântica de cada
+campo (`HP`, ataque, defesa, velocidade etc.) **não foi demonstrada**.
+Não mudar o jogo ou o cálculo de dano com essas colunas sem cruzamento
+adicional no código nativo.
+
+### Novos arquivos e uso
+
+- `tools/catalogar_niveis.py`: gera `cache/hero_levels.lua` a partir de
+  recursos locais originais (cache privado, não publicado no GitHub) e
+  `reports/hero_level_catalog.json` com números, IDs de exemplo e hashes.
+- `tools/analisar_atributos.py`: verifica os três métodos nativos e gera
+  `reports/hero_attr_arm64.json` e `.lua`, sem anexar o executável ao ZIP.
+- `src/level_attributes.lua`: consulta e calcula diferenças **sem alterar**
+  o personagem, sua vida ou seus atributos reais.
+- `src/level_attributes_view.lua`: aba **Níveis** acessível por `Ctrl+L`.
+  Escolha um personagem na lista lateral; use **←/→** para mudar o nível
+  e **R** para reiniciar a seleção. A lista só aparece se o cache local for
+  gerado. A aba anterior `ReInit` continua acessível por `Ctrl+I`.
+
+Testes novos: `test_catalogar_niveis.py`, `test_analisar_atributos.py`,
+`test_levels_runner.py` e `test_level_attributes.lua`. Testes Python/Lua
+verificam o bárbaro e entradas inválidas; a verificação nativa exige o ELF
+original, ausente na distribuição pública. LÖVE2D Windows ainda não foi
+executado para validação gráfica.
+
+**Objetivo seguinte:** investigar o esquema `config::hero::HeroConfig` ou
+seus getters para atribuir nomes aos slots com evidências, e só então
+integrar progressão real ao personagem controlável.
+
+## Fase 30 — Esquema de `HeroConfig`, HP e `ValueType` (com evidência ARM64)
+
+A investigação percorre `config::hero::HeroConfig::load`, `Hero::init`,
+`Hero::addHurtFromEnemy` e `Hero::getValueByType` na versão **BarbarQ
+1.0.1811 ARM64**. O novo `tools/analisar_esquema_heroi.py` confere o
+**SHA-256** da biblioteca e da tabela `config.hero.heroconfig.txt`, quatro
+símbolos ELF completos, instruções nos endereços exatos e os 32 destinos
+de salto da tabela do dispatch. São **586 instruções auditadas**.
+
+**Nova evidência:** `HeroConfig::load` decodifica oito inteiros consecutivos
+pelos offsets **`+0x38, +0x3c, +0x40, +0x44, +0x48, +0x4c, +0x50, +0x54`**.
+A ordem confirma a associação posicional à tabela de configuração usada na
+Fase 29. `Hero::init` copia o valor do offset **`HeroConfig+0x44`**
+para **`Hero+0x314` (HP atual)** e **`Hero+0x310` (referência inicial de HP)**.
+`Hero::addHurtFromEnemy` lê/escreve `Hero+0x314`, confirmando sua função.
+`Hero::getValueByType` usa **código numérico 5** para ler `Hero+0x314`
+e **código 11** para ler `Hero+0x310`. Não afirmar que `+0x310`
+é necessariamente um máximo imutável em todos os estados do jogo.
+
+Nos três primeiros níveis da configuração do bárbaro (`210001`, `220001`,
+`230001`), o HP inicial bruto recuperado é **240, 240, 240**. O campo `+0x38`
+continua representando **195, 200 e 205**, mas **não deve ser rotulado HP**:
+são slots diferentes. Os outros sete campos inteiros permanecem sem rótulo
+semântico confirmado (ataque, defesa, velocidade etc.). Os demais códigos
+de `ValueType` são registrados pelo offset real ou pelo tipo de caminho,
+mas sem nomes de atributos conjecturais.
+
+Arquivos novos ou alterados:
+
+- `tools/analisar_esquema_heroi.py`: auditoria de hashes, símbolos, opcodes e
+tabela de despacho; exporta `reports/hero_schema.json` e `.lua`.
+- `src/hero_schema.lua`: consulta apenas valores confirmados e valida
+`ValueType=5`/`11`, sem tocar nos atributos do personagem.
+- `src/level_attributes_view.lua`: a aba **Níveis (Ctrl+L)** marca somente
+`0x44` como HP inicial. **T** alterna entre níveis e os 32 códigos de
+`ValueType`; **←/→** navegam e **R** reinicia.
+- `tests/test_hero_schema_runner.py` e `tests/test_hero_schema.lua`:
+validação contra ELF/tabelas originais, detecção de hash falso,
+comportamento Lua e integração da interface.
+
+Para reproduzir, extraia legalmente seus próprios recursos do APK 1.0.1811,
+depois execute `python tools/analisar_esquema_heroi.py` e
+`python -m unittest discover -s tests -p 'test_hero_schema_runner.py' -v`.
+O APK, o `.so` e os recursos extraídos **não são publicados no GitHub**.
+A cena Ctrl+P continua experimental, sem dano, morte ou renascimento
+funcional, e não houve validação gráfica manual no Windows/LÖVE2D.

@@ -1,0 +1,47 @@
+{
+  "phase": 29,
+  "apk_version": "1.0.1811",
+  "library_sha256": "8199604d199b57ebe329725c9a624b85517f495f78c1dad745449684750e4677",
+  "functions": [
+    {
+      "name": "Hero::init",
+      "address": "0xe56734",
+      "bytes": 700,
+      "instructions": 175,
+      "checks": 15
+    },
+    {
+      "name": "Hero::reInit",
+      "address": "0xe569f0",
+      "bytes": 1432,
+      "instructions": 358,
+      "checks": 9
+    },
+    {
+      "name": "Hero::getValueByType",
+      "address": "0xe58af8",
+      "bytes": 652,
+      "instructions": 163,
+      "checks": 10
+    }
+  ],
+  "total_instructions": 696,
+  "total_checks": 34,
+  "config_offset_slots": [
+    "0x38",
+    "0x3c",
+    "0x40",
+    "0x44",
+    "0x48",
+    "0x4c",
+    "0x50",
+    "0x54"
+  ],
+  "facts": {
+    "init": "Atribui campos da configuração HeroConfig em offsets 0x38..0x50 ao estado do herói, com duplicações para alguns slots.",
+    "reinit": "No caminho incremental faz diferença entre configurações antiga e nova para os slots verificados.",
+    "get_value": "Hero::getValueByType contém leitura de vários atributos em offsets internos, selecionada por ValueType.",
+    "semantics": "Os nomes dos atributos e correspondência exata ValueType não foram identificados. Sem fórmulas de HP/ataque/defesa/velocidade."
+  },
+  "limits": "A disposição textual do TXT e a disposição binária do struct são correlacionadas por ordem; o ELF isoladamente não prova esse alinhamento nem o nome dos campos."
+}

@@ -1,0 +1,273 @@
+{
+  "phase": 30,
+  "apk_version": "1.0.1811",
+  "elf_sha256": "8199604d199b57ebe329725c9a624b85517f495f78c1dad745449684750e4677",
+  "config_sha256": "33402fa701f4fd425779868cd805c11e9ae88cce74bf298331715035aff6d3a5",
+  "functions": [
+    {
+      "name": "HeroConfig::load",
+      "address": "0x1517b1c",
+      "bytes": 636,
+      "instructions": 159
+    },
+    {
+      "name": "Hero::init",
+      "address": "0xe56734",
+      "bytes": 700,
+      "instructions": 175
+    },
+    {
+      "name": "Hero::addHurtFromEnemy",
+      "address": "0xe57678",
+      "bytes": 356,
+      "instructions": 89
+    },
+    {
+      "name": "Hero::getValueByType",
+      "address": "0xe58af8",
+      "bytes": 652,
+      "instructions": 163
+    }
+  ],
+  "total_instructions": 586,
+  "slot_load_order": [
+    "0x38",
+    "0x3c",
+    "0x40",
+    "0x44",
+    "0x48",
+    "0x4c",
+    "0x50",
+    "0x54"
+  ],
+  "confirmed_hp_slot": "0x44",
+  "hero_hp_current_offset": "0x314",
+  "hero_hp_base_offset": "0x310",
+  "example_barbarian": {
+    "210001": {
+      "0x38": 195,
+      "0x3c": 59,
+      "0x40": 76,
+      "0x44": 240,
+      "0x48": 150,
+      "0x4c": 10000,
+      "0x50": 29,
+      "0x54": 8
+    },
+    "220001": {
+      "0x38": 200,
+      "0x3c": 59,
+      "0x40": 79,
+      "0x44": 240,
+      "0x48": 150,
+      "0x4c": 10000,
+      "0x50": 54,
+      "0x54": 8
+    },
+    "230001": {
+      "0x38": 205,
+      "0x3c": 59,
+      "0x40": 82,
+      "0x44": 240,
+      "0x48": 150,
+      "0x4c": 10000,
+      "0x50": 78,
+      "0x54": 8
+    }
+  },
+  "value_types": [
+    {
+      "value_type": 2,
+      "target": "0xe58b3c",
+      "hero_offset": "0x32c",
+      "kind": "hero_field"
+    },
+    {
+      "value_type": 3,
+      "target": "0xe58b5c",
+      "hero_offset": "0x330",
+      "kind": "hero_field"
+    },
+    {
+      "value_type": 4,
+      "target": "0xe58b44",
+      "hero_offset": null,
+      "kind": "delegate_entity"
+    },
+    {
+      "value_type": 5,
+      "target": "0xe58b64",
+      "hero_offset": "0x314",
+      "kind": "hero_field"
+    },
+    {
+      "value_type": 6,
+      "target": "0xe58b6c",
+      "hero_offset": "0x318",
+      "kind": "hero_field"
+    },
+    {
+      "value_type": 7,
+      "target": "0xe58b74",
+      "hero_offset": "0xe0",
+      "kind": "hero_field"
+    },
+    {
+      "value_type": 8,
+      "target": "0xe58b44",
+      "hero_offset": null,
+      "kind": "delegate_entity"
+    },
+    {
+      "value_type": 9,
+      "target": "0xe58b44",
+      "hero_offset": null,
+      "kind": "delegate_entity"
+    },
+    {
+      "value_type": 10,
+      "target": "0xe58b44",
+      "hero_offset": null,
+      "kind": "delegate_entity"
+    },
+    {
+      "value_type": 11,
+      "target": "0xe58b7c",
+      "hero_offset": "0x310",
+      "kind": "hero_field"
+    },
+    {
+      "value_type": 12,
+      "target": "0xe58b84",
+      "hero_offset": "0x31c",
+      "kind": "hero_field"
+    },
+    {
+      "value_type": 13,
+      "target": "0xe58b44",
+      "hero_offset": null,
+      "kind": "delegate_entity"
+    },
+    {
+      "value_type": 14,
+      "target": "0xe58b8c",
+      "hero_offset": null,
+      "kind": "derived_value"
+    },
+    {
+      "value_type": 15,
+      "target": "0xe58be8",
+      "hero_offset": null,
+      "kind": "derived_value"
+    },
+    {
+      "value_type": 16,
+      "target": "0xe58c1c",
+      "hero_offset": null,
+      "kind": "derived_value"
+    },
+    {
+      "value_type": 17,
+      "target": "0xe58b44",
+      "hero_offset": null,
+      "kind": "delegate_entity"
+    },
+    {
+      "value_type": 18,
+      "target": "0xe58c50",
+      "hero_offset": "0x334",
+      "kind": "hero_field"
+    },
+    {
+      "value_type": 19,
+      "target": "0xe58c58",
+      "hero_offset": "0x328",
+      "kind": "hero_field"
+    },
+    {
+      "value_type": 20,
+      "target": "0xe58c60",
+      "hero_offset": "0x338",
+      "kind": "hero_field"
+    },
+    {
+      "value_type": 21,
+      "target": "0xe58c68",
+      "hero_offset": "0x33c",
+      "kind": "hero_field"
+    },
+    {
+      "value_type": 22,
+      "target": "0xe58c70",
+      "hero_offset": "0x340",
+      "kind": "hero_field"
+    },
+    {
+      "value_type": 23,
+      "target": "0xe58c78",
+      "hero_offset": "0x344",
+      "kind": "hero_field"
+    },
+    {
+      "value_type": 24,
+      "target": "0xe58c80",
+      "hero_offset": "0x348",
+      "kind": "hero_field"
+    },
+    {
+      "value_type": 25,
+      "target": "0xe58c88",
+      "hero_offset": "0x34c",
+      "kind": "hero_field"
+    },
+    {
+      "value_type": 26,
+      "target": "0xe58c90",
+      "hero_offset": "0x350",
+      "kind": "hero_field"
+    },
+    {
+      "value_type": 27,
+      "target": "0xe58c98",
+      "hero_offset": "0x354",
+      "kind": "hero_field"
+    },
+    {
+      "value_type": 28,
+      "target": "0xe58ca0",
+      "hero_offset": "0x358",
+      "kind": "hero_field"
+    },
+    {
+      "value_type": 29,
+      "target": "0xe58ca8",
+      "hero_offset": "0x35c",
+      "kind": "hero_field"
+    },
+    {
+      "value_type": 30,
+      "target": "0xe58cb0",
+      "hero_offset": "0x360",
+      "kind": "hero_field"
+    },
+    {
+      "value_type": 31,
+      "target": "0xe58cb8",
+      "hero_offset": "0x364",
+      "kind": "hero_field"
+    },
+    {
+      "value_type": 32,
+      "target": "0xe58cc0",
+      "hero_offset": "0x368",
+      "kind": "hero_field"
+    },
+    {
+      "value_type": 33,
+      "target": "0xe58cc8",
+      "hero_offset": "0x36c",
+      "kind": "hero_field"
+    }
+  ],
+  "limits": "Offsets validos somente para APK 1.0.1811. ValueType IDs sao numericos; seus nomes nao foram recuperados. 0x310 contem o valor base inicial do HP; efeitos externos podem altera-lo. Sem combate integrado."
+}

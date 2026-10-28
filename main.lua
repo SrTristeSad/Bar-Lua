@@ -1,7 +1,7 @@
 -- Bar-Lua | laboratório de engenharia reversa do BarbarQ 1.0.1811.
 -- NÃO é o jogo: visualização técnica, prévias experimentais e análise de dados originais.
-local modes = {"Mapas TMX", "Imagens", "Atlas .plist/.bplist", "Configurações", "Animações", "Cenas .csb", "ELF ARM64", "Fluxo ARM64", "Movimento ARM64", "Entity / Box2D", "Contatos ARM64", "Colisores ARM64", "Filtros Box2D", "Teste de movimento", "Habilidades (dados)", "Combate ARM64", "Núcleo de dano ARM64", "HP / Vida ARM64", "Morte / Score ARM64", "Renascimento ARM64", "ReInit ARM64"}
-local tabLabels = {"Mapa", "Img", "Atlas", "Cfg", "Anim", "CSB", "ELF", "Fluxo", "Mov", "Ent", "Cont", "Colis", "Filtro", "Teste", "Skill", "Comb", "Dano", "Vida", "Morte", "Renas", "ReInit"}
+local modes = {"Mapas TMX", "Imagens", "Atlas .plist/.bplist", "Configurações", "Animações", "Cenas .csb", "ELF ARM64", "Fluxo ARM64", "Movimento ARM64", "Entity / Box2D", "Contatos ARM64", "Colisores ARM64", "Filtros Box2D", "Teste de movimento", "Habilidades (dados)", "Combate ARM64", "Núcleo de dano ARM64", "HP / Vida ARM64", "Morte / Score ARM64", "Renascimento ARM64", "ReInit ARM64", "Atributos por nível"}
+local tabLabels = {"Mapa", "Img", "Atlas", "Cfg", "Anim", "CSB", "ELF", "Fluxo", "Mov", "Ent", "Cont", "Colis", "Filtro", "Teste", "Skill", "Comb", "Dano", "Vida", "Morte", "Renas", "ReInit", "Níveis"}
 local animationView = require("src.animation_view")
 local sceneView = require("src.scene_view")
 local nativeView = require("src.native_view")
@@ -19,10 +19,11 @@ local heroHurtView = require("src.hero_hurt_view")
 local deathView = require("src.death_view")
 local rebornView = require("src.reborn_view")
 local reinitView = require("src.reinit_view")
+local levelAttributesView = require("src.level_attributes_view")
 local sceneResources = require("src.scene_resources")
 local spriteGeometry = require("src.sprite_geometry")
 local mode, selected, search, zoom = 1, 1, "", 1
-local lists = {{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}}
+local lists = {{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}}
 local maps, atlases, animations, scenes, nativeCatalog, flowCatalog, contactCatalog, colliderCatalog, filterCatalog = {}, {}, {}, {}, {}, {}, {}, {}, {}
 local sceneResourceIndex = nil
 local skillCatalog = {links={},tables={}}
@@ -33,6 +34,9 @@ local heroHurtReport = {}
 local deathReport = {}
 local rebornReport = {}
 local reinitReport = {}
+local heroLevelCatalog = {groups={}}
+local heroAttrReport = {}
+local heroSchemaReport = {}
 local imageIndex = {}
 local textures, quads = {}, {}
 local position = {x = 0, y = 0}
@@ -167,7 +171,7 @@ local function drawShell(w, h, list)
         put(label, 13, y, i == selected and {1, 1, 1} or {0.74, 0.80, 0.84}, small)
     end
     background(0, h - BOTTOM, w, BOTTOM, {0.12, 0.16, 0.20})
-    put("↑↓: selecionar  •  Ctrl+I: reInit  •  Ctrl+B: renascer  •  Ctrl+P: teste", 13, h - BOTTOM + 7, {0.85, 0.90, 0.96}, small)
+    put("↑↓: selecionar  •  Ctrl+L: níveis  •  Ctrl+I: reInit  •  Ctrl+P: teste", 13, h - BOTTOM + 7, {0.85, 0.90, 0.96}, small)
     put(status, 13, h - BOTTOM + 29, {0.72, 0.80, 0.87}, small)
 end
 
@@ -391,6 +395,9 @@ function love.load()
     deathReport = readLua("reports/death_flow.lua")
     rebornReport = readLua("reports/reborn_flow.lua")
     reinitReport = readLua("reports/reinit_flow.lua")
+    heroLevelCatalog = readLua("cache/hero_levels.lua")
+    heroAttrReport = readLua("reports/hero_attr_arm64.lua")
+    heroSchemaReport = readLua("reports/hero_schema.lua")
     for _, map in ipairs(maps) do lists[1][#lists[1]+1] = map end
     scan("assets_original", {png = true, jpg = true, jpeg = true}, lists[2])
     for _, atlas in ipairs(atlases) do lists[3][#lists[3]+1] = atlas end
@@ -412,6 +419,7 @@ function love.load()
     lists[19][1] = {name="onDied / dieLogic (morte e pontuação)"}
     lists[20][1] = {name="update / reborn (renascimento)"}
     lists[21][1] = {name="reInit / atributos por nível"}
+    for _,row in ipairs(heroLevelCatalog.groups or {}) do lists[22][#lists[22]+1]=row end
     for _, path in ipairs(lists[2]) do
         imageIndex[path:gsub("^assets_original/", ""):lower()] = path:gsub("^assets_original/", "")
     end
@@ -493,6 +501,8 @@ function love.draw()
         filterView.draw(item, {x=x, y=y, w=pw, h=ph, put=put, background=background, small=small})
     elseif mode == 15 then
         skillView.draw(item,{x=x,y=y,w=pw,h=ph,put=put,background=background,small=small},skillCatalog.tables,skillTrace)
+    elseif mode == 22 then
+        levelAttributesView.draw(item,heroAttrReport,{x=x,y=y,w=pw,h=ph,put=put,background=background,small=small},heroSchemaReport)
     elseif mode == 21 then
         reinitView.draw(reinitReport,{x=x,y=y,w=pw,h=ph,put=put,background=background,small=small})
     elseif mode == 20 then
@@ -524,6 +534,7 @@ function love.keypressed(key)
     if key == 'n' and love.keyboard.isDown('lctrl','rctrl') then setMode(19); return end
     if key == 'b' and love.keyboard.isDown('lctrl','rctrl') then setMode(20); return end
     if key == 'i' and love.keyboard.isDown('lctrl','rctrl') then setMode(21); return end
+    if key == 'l' and love.keyboard.isDown('lctrl','rctrl') then setMode(22); return end
     if mode == 14 then
         if key == 'r' then
             local ok=playtest.start(selectedItem(),playtest.findHero(animations),atlases)
@@ -547,6 +558,7 @@ function love.keypressed(key)
     if mode == 19 and deathView.keypressed(key) then return end
     if mode == 20 and rebornView.keypressed(key) then return end
     if mode == 21 and reinitView.keypressed(key) then return end
+    if mode == 22 and levelAttributesView.keypressed(key) then return end
     if mode == 13 and filterView.keypressed(key) then return end
     if mode == 10 and entityMoveView.keypressed(key) then return end
     if mode == 9 and movementView.keypressed(key) then return end
@@ -605,7 +617,7 @@ function love.textinput(text)
     if mode == 3 and (text == "[" or text == "]") then return end
     if mode == 5 and (text:lower() == "i" or text:lower() == "b" or text:lower() == "p") then return end
     if mode == 6 and (text:lower() == "g" or text:lower() == "v" or text:lower() == "t") then return end
-    if mode == 9 or mode == 10 or mode == 13 or mode == 14 or mode == 16 or mode == 17 or mode == 18 or mode == 19 or mode == 20 or mode == 21 then return end
+    if mode == 9 or mode == 10 or mode == 13 or mode == 14 or mode == 16 or mode == 17 or mode == 18 or mode == 19 or mode == 20 or mode == 21 or mode == 22 then return end
     if mode ~= 1 and #search < 80 and text:match("%g") then search = search .. text; selected = 1; resetImage(); if mode == 5 then animationView.reset() end; if mode == 6 then sceneView.reset() end end
 end
 

@@ -1,0 +1,33 @@
+{
+  "phase": 29,
+  "version": "1.0.1811",
+  "source_sha256": {
+    "config.hero.heroconfig.txt": "33402fa701f4fd425779868cd805c11e9ae88cce74bf298331715035aff6d3a5",
+    "config.hero.entityconfig.txt": "159248ff64a1852707abbb28cec748ceaf870ae126c26fbcfeed1f8efb6bfb8e"
+  },
+  "hero_records": 1239,
+  "entity_records": 2734,
+  "group_count": 435,
+  "missing_entity_config_count": 2297,
+  "groups_with_multiple_levels": 27,
+  "total_level_entries": 832,
+  "slots": [
+    "0x38",
+    "0x3c",
+    "0x40",
+    "0x44",
+    "0x48",
+    "0x4c",
+    "0x50",
+    "0x54"
+  ],
+  "confirmed_example": {
+    "entity_id": 210000,
+    "base_config_id": 210001,
+    "level_1_0x38": 195,
+    "level_2_0x38": 200,
+    "level_3_0x38": 205
+  },
+  "status": "Os 8 campos são associados por ordem textual; o código ARM64 confirma leitura em 0x38..0x54 e destino dos primeiros 7 em Hero. Não há prova independente da semântica HP/ataque/defesa/velocidade.",
+  "limits": "Sequências são cortadas quando muda o nome na tabela. Aliases de entidade podem compartilhar uma configuração; nem todo modo usa a mesma progressão. Nenhum atributo de combate é alterado."
+}
