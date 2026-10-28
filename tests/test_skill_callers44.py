@@ -21,6 +21,16 @@ class Callers44Tests(unittest.TestCase):
         self.assertEqual(result["CSkill::Release"][0]["instruction_va"], "0xe48750")
         self.assertEqual(result["CSelfSkill::Update"], [])
         self.assertEqual(set(result), set(TARGETS))
+    def test_llvm_byte_layout_and_hash_targets(self):
+        result = analyse_lines([
+            "0000000000e48744 <SkillOwner::tick>:",
+            "  e48748: 00 00 00 94  bl #0xe65a90 <CSelfSkill::HasFunctions>",
+            "  e4874c: 00 00 00 14  b #0xe65034 <CSkill::Release>",
+        ])
+        self.assertEqual(len(result["CSelfSkill::HasFunctions"]), 1)
+        self.assertEqual(result["CSelfSkill::HasFunctions"][0]["caller_symbol"], "SkillOwner::tick")
+        self.assertEqual(len(result["CSkill::Release"]), 1)
+
     def test_only_exact_target(self):
         data = analyse_lines(["f00: 94000000 bl 0xe65a94", "f04: d63f0100 blr x8"])
         self.assertTrue(all(not x for x in data.values()))
