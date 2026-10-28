@@ -444,6 +444,8 @@ function love.draw()
 end
 
 function love.keypressed(key)
+    -- F13 não existe em muitos teclados; atalho alternativo.
+    if key == "f12" and love.keyboard.isDown("lctrl", "rctrl") then setMode(13); return end
     local n = tonumber(key:match("^f(%d+)$"))
     if n and n >= 1 and n <= #modes then setMode(n); return end
     if mode == 13 and filterView.keypressed(key) then return end
@@ -514,6 +516,12 @@ end
 
 function love.mousepressed(x, y, button)
     if button ~= 1 then return end
+    -- Clique no cabeçalho permite navegar inclusive à aba F13.
+    if y >= 49 and y < 80 and x >= 14 then
+        local w = love.graphics.getDimensions()
+        local i = math.floor((x - 14) / ((w - 28) / #modes)) + 1
+        if i >= 1 and i <= #modes then setMode(i); return end
+    end
     if mode == 3 and atlasClick and atlasClick.atlas == selectedItem() then
         local a = atlasClick
         if x >= a.minx and x < a.maxx and y >= a.miny and y <= a.maxy then
