@@ -2,25 +2,86 @@
 
 **Objetivo:** estudar um APK original do BarbarQ e reproduzir sua experiência no PC com **Lua e LÖVE2D**, sem emulador Android. Isto **não** é um jogo inspirado no BarbarQ. Os recursos recuperados servem de referência, mas portar a lógica original exige engenharia reversa adicional.
 
-## Fase 17 — filtros de contato Box2D (NÃO jogável)
+## Fase 18 — primeira cena controlável (laboratório físico, NÃO partida original)
 
-A biblioteca ARM64 original do BarbarQ 1.0.1811 foi analisada estaticamente, com verificação de SHA-256, endereços, tamanhos e padrões ARM64. Os novos relatórios (`reports/native_filters.json` e `.lua`) contêm apenas metadados, sem redistribuir código nativo.
+A aba **Teste** (atalho **Ctrl+P**) acrescenta uma cena **controlável** em
+**LÖVE2D 11.x com `love.physics` (Box2D)**, usando somente recursos visuais
+recuperados do APK **1.0.1811**: a imagem do mapa `petisland_01` (`tilemaps/pvetiled.png`)
+e a animação `character/babarian/babarian.bexportjson` com as texturas `babarian0`.
+São exibidas poses `stand_0` e `walk_0` e variantes 1–5 dos movimentos
+originais, avaliadas pelo mesmo renderizador experimental da F5.
 
-- **4 funções / 160 instruções:** `Entity::setCollidable(bool)`, `b2ContactFilter::ShouldCollide`, `b2Fixture::SetFilterData` e `config::hero::CollisionConfig::load`.
-- `Entity::setCollidable(true)` define categoria **1**, máscara **3**, grupo **0** no fixture acessado; `false` define categoria **0**, máscara **1**, grupo **0**.
-- O filtro de contato exige que **as duas máscaras** permitam as categorias da outra fixture. Grupos iguais e não-zero sobrepõem a regra: positivos permitem e negativos bloqueiam.
-- `SetFilterData` atualiza os campos físicos e toca proxies do broadphase. Isso não é integração de física nem resolução de colisão.
-- **F13 — Filtros Box2D** permite explorar a decisão em Lua. Teclas `A/B` alternam os filtros das fixtures, `G` alterna grupos 0/+1/-1, e `R` reinicia. Em teclados sem F13, use **Ctrl+F12** ou clique na aba superior.
-- **58 testes da versão local passaram**, incluindo o analisador do ELF e a lógica Lua.
+**Como experimentar** (com `assets_original/` e `cache/` preparados):
 
-Para reproduzir a auditoria, coloque sua própria cópia extraída da biblioteca ARM64 no caminho indicado e execute:
+1. Abra a pasta do projeto no LÖVE2D 11.x e pressione **Ctrl+P** (ou clique na aba **Teste**).
+2. **WASD/setas** movem o bárbaro; **R** reinicia a cena; **1–5** selecionam
+   uma variante visual da animação; **C** mostra ou oculta os contornos físicos;
+   a roda do mouse ajusta o zoom; no painel à esquerda pode-se escolher outro
+   mapa extraído do APK.
+3. Um pequeno **retângulo laranja** é um **obstáculo de depuração artificial**,
+   desenhado com contorno. **Não faz parte do mapa oficial**. Os limites da área
+   são corpos estáticos de teste; **não recuperamos os obstáculos do terreno**.
+
+**Fatos recuperados × hipóteses do teste**
+
+| Elemento | Procedência |
+|---|---|
+| `petisland_01`, PNG dos tiles, sprite e movimentos `stand/walk` | **Original do APK**, em leitura local |
+| `love.physics.newWorld` / corpo dinâmico / contato Box2D | **Implementação funcional** no LÖVE2D (motor Box2D) |
+| `categoryBits=1, maskBits=3, groupIndex=0` | **Confirmado** antes na F17 para `Entity::setCollidable(true)` |
+| Corpo circular de raio 18 px, velocidade-base `300/100` × 30 px/s | **Hipóteses de depuração**, não medidas do BarbarQ |
+| Paredes de borda e retângulo de teste | **Artificiais**, não colisões reais do mapa |
+| Interpolação do esqueleto e reprodução a 30 fps | **Aproximação experimental**, não garantia de equivalência 1:1 |
+
+Um relógio de física com passo fixo **1/60 s**, delta limitado e normalização
+WASD diagonal reduz variações dependentes da taxa de quadros. O código separa
+criação do mundo, entrada, atualização e renderização no módulo
+`src/playtest.lua`, com testes `tests/test_playtest.lua` (mock rigoroso das
+chamadas físicas) e `tests/test_playtest_integration.lua` (animação/atlas/mapa
+reais). A presença do módulo `love.physics` é verificada antes de iniciar.
+
+**Auditoria:** `python -m pytest -q` — **60 testes e 10 subtestes aprovados**
+no ambiente de análise. A renderização e os contatos físicos no Windows
+**não foram validados num executável LÖVE2D real**, porque ele não estava
+instalado neste ambiente. Não há combate, bots, lógica de rede, habilidades,
+regras de dano, obstáculos oficiais nem partida jogável.
+
+---
+
+## Fase 17 — filtros de contato Box2D recuperados (NÃO jogável)
+
+Analisamos estaticamente `Entity::setCollidable(bool)`,
+`b2ContactFilter::ShouldCollide`, `b2Fixture::SetFilterData` e
+`config::hero::CollisionConfig::load` na biblioteca ARM64 **do APK 1.0.1811**.
+`tools/analisar_filtros.py` confere SHA-256, endereços, tamanhos e instruções;
+os relatórios `reports/native_filters.json` e `.lua` contêm somente metadados.
+
+- `Entity::setCollidable(true)` constrói um filtro com **categoryBits=1,
+  maskBits=3, groupIndex=0** e invoca `SetFilterData` no fixture examinado.
+- `Entity::setCollidable(false)` usa **categoryBits=0, maskBits=1, groupIndex=0**.
+- `b2ContactFilter::ShouldCollide`: se ambos compartilham um `groupIndex` não
+  nulo, retorna verdadeiro apenas para grupo positivo. Caso contrário exige
+  **(A.maskBits & B.categoryBits) != 0** e **(B.maskBits & A.categoryBits) != 0**.
+- `SetFilterData` atualiza os campos do fixture e marca proxies relevantes no
+  broadphase; mudar um filtro não aplica força nem resolve colisões por si só.
+- `CollisionConfig::load` recupera um tipo inteiro e referências opcionais a
+  descrições de formas; ainda não identificamos filtros exclusivos por herói.
+- **F13 — Filtros Box2D** reproduz somente essa decisão em Lua, com teclas
+  **A/B** para alternar os filtros dos fixtures, **G** para alternar grupo
+  0/+1/-1 e **R** para reiniciar. A matriz de referência inclui quatro pares.
+
+Auditoria reproduzível com sua cópia local da biblioteca:
 
 ```powershell
 py tools/analisar_filtros.py --so "lib/arm64-v8a/libcocos2dcpp.so" --manifest reports/native_arm64.json
 py -m unittest discover -s tests -v
 ```
 
-**Limites:** a F13 não simula contatos, geometria, colisões nem movimentação real. Um resultado positivo em `ShouldCollide` não garante colisão: é apenas uma das condições. Não extrapolar o filtro de `setCollidable` aos demais tipos de entidades ou fixtures. A execução gráfica em Windows ainda não foi verificada.
+**Limitações:** a simulação de filtros não executa Box2D, não cria contatos nem
+faz o herói andar. Resultados de `ShouldCollide` não garantem contato físico:
+corpos precisam estar próximos e outras regras ainda se aplicam. Não inferimos
+filtros dos demais fixtures a partir dos valores de `Entity::setCollidable`.
+A execução gráfica real no Windows permanece sem validação.
 
 ## Fase 16 — inicialização de corpo físico e colisores (não jogável)
 
