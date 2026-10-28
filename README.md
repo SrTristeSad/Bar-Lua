@@ -2,6 +2,37 @@
 
 **Objetivo:** estudar um APK original do BarbarQ e reproduzir sua experiência no PC com **Lua e LÖVE2D**, sem emulador Android. Isto **não** é um jogo inspirado no BarbarQ. Os recursos recuperados servem de referência, mas portar a lógica original exige engenharia reversa adicional.
 
+## Fase 14 — Entity::move / Box2D (laboratório; NÃO jogável)
+
+**Base verificável:** a auditoria estática de `Entity::move(float,float)` na biblioteca ARM64
+`libcocos2dcpp.so` do APK BarbarQ **1.0.1811** confirmou **59 instruções e 21 padrões**,
+com os endereços validados após conferir o SHA-256 do arquivo. A função foi localizada
+na tabela de símbolos nativos em **0xE4A88C** (236 bytes). Relatórios disponíveis em
+`reports/entity_move.json` e `.lua`; nenhum trecho do binário é redistribuído.
+
+- **Caminho 1 (bit 5 das flags ativo):** se o tipo do corpo for zero, retorna;
+  caso contrário armazena os componentes `x,y` diretamente no corpo físico (`+0x40`).
+  Se há movimento não nulo e o bit 1 estava desativado, esse bit é ativado e o
+  contador interno em `+0xAC` é zerado. O significado desses bits no comportamento
+  final do jogo ainda precisa de confirmação.
+- **Caminho 2 (bit 5 desativado):** para deslocamentos próximos de zero
+  (limiar original `±0,0001`, armazenado como float32), retorna. Caso contrário
+  calcula `posição_anterior + (dx/30, dy/30)` e chama `b2Body::SetTransform`
+  preservando o ângulo previamente lido.
+- **Nova aba F10:** `Entity / Box2D` exibe os resultados previstos pelo fluxo
+  do ELF. **Setas** alteram `dx/dy`; `G` alterna bit 5, `T` alterna o tipo de
+  corpo (zero/não-zero), `Z` zera componentes, `Enter` aplica **somente** a posição
+  proposta na ferramenta, `R` reinicia. Essa ferramenta não executa Box2D.
+- **Ferramenta:** `tools/analisar_entidade.py --apk caminho.apk --manifest
+  reports/native_arm64.json --out reports` exige LLVM e Binutils, valida os símbolos,
+  offsets e padrões observados, gera relatórios somente com metadados.
+
+**Limites importantes:** `SetTransform` não é uma física completa: não foram
+reconstruídos passo de simulação, colisões, contatos, IA, servidor, mecanismos de
+previsão ou comandos em tempo real. Os cálculos Lua não reproduzem todos os detalhes
+de arredondamento float32 do ARM64. Testes automatizados concluídos localmente, mas
+**sem execução gráfica no Windows**. O projeto segue não jogável.
+
 ## Fase 13 — codificação de controle e vetores do ARM64 (laboratório, ainda não jogável)
 
 **Base confirmada:** APK BarbarQ 1.0.1811 ARM64, `libcocos2dcpp.so` com SHA-256 conferido. O analisador `tools/analisar_movimento.py` verifica **23 padrões** de instruções em **cinco funções nativas**, extrai constantes `100.0`, `π` e `180.0` das regiões `PT_LOAD` e produz `reports/native_movement.json`/`.lua`. O relatório publica somente metadados, não a biblioteca nem os bytes do código.
