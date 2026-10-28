@@ -1,0 +1,37 @@
+{
+  "phase": 24,
+  "apk_version": "1.0.1811",
+  "library_sha256": "8199604d199b57ebe329725c9a624b85517f495f78c1dad745449684750e4677",
+  "function": "_ZN15CDamageFunction14GetDamageValueEPb",
+  "address": "0xe52950",
+  "function_instructions": 332,
+  "percent_ratio_symbol": "_ZN16LogicWorkshopMgr13DECIMAL_RATIOE",
+  "percent_ratio": 100.0,
+  "parameter_offsets": [
+    "0x38",
+    "0x40",
+    "0x48",
+    "0x58",
+    "0x50",
+    "0x60"
+  ],
+  "parameter_names": [
+    "A",
+    "B",
+    "chance_threshold",
+    "C",
+    "D_percent",
+    "E"
+  ],
+  "arithmetic_core": "(A - B * (1 - C / ratio)) * (roll <= trunc(chance_threshold) ? D_percent / ratio : 1) * (1 - E / ratio)",
+  "observed_random_args": {
+    "arg1": 0,
+    "arg2": 1,
+    "arg3": 100
+  },
+  "verified_operations": 29,
+  "cached_nonnegative_result": true,
+  "map_type_seven_special_branch": true,
+  "additional_target_modifier": true,
+  "limitations": "Somente o núcleo aritmético de um ramo de GetDamageValue foi reconstituído. Não são conhecidos os valores concretos dos parâmetros para a habilidade 4010020, a distribuição do RNG, os modificadores de alvo, o arredondamento final nem o vínculo com o ataque básico. Não usar para infligir dano em jogo."
+}

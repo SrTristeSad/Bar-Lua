@@ -1,0 +1,114 @@
+{
+  "phase": 23,
+  "apk_version": "1.0.1811",
+  "library_sha256": "8199604d199b57ebe329725c9a624b85517f495f78c1dad745449684750e4677",
+  "functions": [
+    {
+      "name": "CDamageFunction::Run()",
+      "virtual_address": "0xe52ff8",
+      "size_bytes": 120,
+      "instruction_count": 30,
+      "checks": [
+        "damage_run_target"
+      ],
+      "observed_calls": [
+        "_ZN15CDamageFunction3RunEP12CSkillEntity"
+      ]
+    },
+    {
+      "name": "CDamageFunction::Run(target)",
+      "virtual_address": "0xe53070",
+      "size_bytes": 280,
+      "instruction_count": 70,
+      "checks": [
+        "get_damage_value",
+        "hero_hurt",
+        "resolve_target_entity"
+      ],
+      "observed_calls": [
+        "_ZN15CDamageFunction14GetDamageValueEPb",
+        "_ZN4Hero16addHurtFromEnemyEiib"
+      ]
+    },
+    {
+      "name": "CDamageFunction::GetDamageValue",
+      "virtual_address": "0xe52950",
+      "size_bytes": 1328,
+      "instruction_count": 332,
+      "checks": [
+        "random_number",
+        "read_parameter"
+      ],
+      "observed_calls": [
+        "_ZN15CDamageFunction13GetParamValueEPKN6config5skill14FunctionDamage18DamageFormulaParamEf",
+        "_ZN7RandNum8InstanceEv",
+        "_ZN7RandNum9__NextIntEjiiPi"
+      ]
+    },
+    {
+      "name": "CDamageFunction::GetParamValue",
+      "virtual_address": "0xe52e94",
+      "size_bytes": 356,
+      "instruction_count": 89,
+      "checks": [],
+      "observed_calls": []
+    },
+    {
+      "name": "CSelectTargetSector::GetSelectTargets",
+      "virtual_address": "0xe63e14",
+      "size_bytes": 632,
+      "instruction_count": 158,
+      "checks": [
+        "physical_query",
+        "stick_direction",
+        "trig_cosine",
+        "trig_sine"
+      ],
+      "observed_calls": [
+        "_ZNK4Hero17getButtonStickDirEi",
+        "_ZNK7b2World9QueryAABBEP15b2QueryCallbackRK6b2AABB"
+      ]
+    },
+    {
+      "name": "CSelectTargetNearest::GetSelectTargets",
+      "virtual_address": "0xe63990",
+      "size_bytes": 612,
+      "instruction_count": 153,
+      "checks": [],
+      "observed_calls": []
+    },
+    {
+      "name": "CMultiTargetSkill::Update",
+      "virtual_address": "0xe65f2c",
+      "size_bytes": 524,
+      "instruction_count": 131,
+      "checks": [
+        "bind_function_entity"
+      ],
+      "observed_calls": [
+        "_ZN9CFunction9SetEntityEP12CSkillEntity"
+      ]
+    },
+    {
+      "name": "Entity::skill_update",
+      "virtual_address": "0xe4a28c",
+      "size_bytes": 488,
+      "instruction_count": 122,
+      "checks": [
+        "release_skill"
+      ],
+      "observed_calls": [
+        "_ZN6CSkill7ReleaseEv"
+      ]
+    }
+  ],
+  "total_instructions": 1085,
+  "confirmed": [
+    "Run() chama Run(CSkillEntity*) em um ramo.",
+    "Run(CSkillEntity*) consulta GetDamageValue e pode chamar Hero::addHurtFromEnemy.",
+    "GetDamageValue lê parâmetros de fórmula e chama um gerador de números aleatórios.",
+    "SelectTargetSector consulta direção de controle, trigonometria e uma busca AABB no Box2D.",
+    "Entity::skill_update contém chamada para liberar CSkill."
+  ],
+  "limits": "Chamada presente não implica execução incondicional. Não foram recuperados valores de dano, probabilidades, seleção final de vítimas, momento do acerto, recarga ou vínculo entre a habilidade 4010020 e uma função de dano. Não executar combate com este relatório."
+}

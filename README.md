@@ -42,7 +42,7 @@ sem causar dano a entidades e sem criar regras inventadas.
 
 ## Fase 21 — catálogo de habilidades e análise do ciclo de execução (ainda não há dano funcional)
 
-A reconstrução continua sendo **fiel ao BarbarQ**, sem substituir mecânicas por outras inventadas. Nesta etapa: 
+A reconstrução continua sendo **fiel ao BarbarQ**, sem substituir mecânicas por outras inventadas. Nesta etapa:
 
 - `tools/catalogar_habilidades.py` interpreta as tabelas `config.skill.*.txt` por campos de descrição com tamanho UTF-8 em **bytes**. Valida IDs únicos, comprimentos, referências e caracteres UTF-8 sem executar dados do APK.
 - As oito tabelas auditadas contêm **31.119** configurações `heroskillconfig`, **566** vínculos `functionbindskill`, **687** registros `functiondamage`, **1.489** `functionanimation`, **726** `functionrandomskill`, **27.948** `functiondelayskill`, **84** `selectsector` e **98** `skilleventregister`.
@@ -443,3 +443,38 @@ O mapeamento dos campos comuns `.csb` foi confrontado com o projeto público [cs
 - O conversor de quadros usa **30 fps apenas como convenção visual de investigação**, não é uma confirmação da taxa original de reprodução; não afirmar equivalência 1:1.
 - Rode `python tools/analisar_ataques.py` e `python -m unittest discover -s tests -p 'test_*.py'` a partir da raiz para verificar a versão.
 - Os binários e os assets do APK não pertencem ao repositório público.
+
+## Fase 23 — fluxo ARM64 da busca de alvos e aplicação de dano (ainda sem combate)
+
+- `tools/analisar_combate.py` confere o SHA-256 de `libcocos2dcpp.so` (APK 1.0.1811), os símbolos, tamanhos, endereços e as chamadas das **8 funções** escolhidas. Gera `reports/native_combat.json` e `reports/native_combat.lua`, apenas com metadados auditáveis, sem código proprietário.
+- `CDamageFunction::Run()` encaminha para `Run(CSkillEntity*)` em um ramo; este pode invocar `GetDamageValue(bool*)` e `Hero::addHurtFromEnemy(...)`.
+- `GetDamageValue(bool*)` consulta `GetParamValue(...)` e um gerador de números aleatórios. Isso **não revela** nem justifica uma fórmula de dano simplificada.
+- `CSelectTargetSector::GetSelectTargets()` consulta direção e trigonometria e chama `b2World::QueryAABB`. **AABB é busca preliminar**, não prova da regra final de alvos atingidos.
+- `CMultiTargetSkill::Update(float)` contém vínculo de função com entidade, e `Entity::skill_update(float)` chama `CSkill::Release()` em caminhos de limpeza.
+- Nova aba **Combate ARM64** (`Ctrl+D`) para inspecionar os metadados no LÖVE2D. As 15 abas anteriores continuam disponíveis.
+- **Limitações:** nenhuma animação J/K/L foi ligada com certeza ao cálculo de dano; não implementa alvos, hitbox, acerto, dano, cooldown ou combate. O visualizador para Windows continua precisando de verificação visual em ambiente LÖVE2D real.
+
+Regerar o relatório usando sua própria extração: `python tools/analisar_combate.py --library lib/arm64-v8a/libcocos2dcpp.so`.
+Os binários Android e recursos originais não devem ser enviados ao GitHub público.
+
+
+## Fase 24 — núcleo matemático de `CDamageFunction::GetDamageValue` (não jogável)
+
+A Fase 24 aprofunda a desmontagem do **mesmo APK 1.0.1811**, verificando o SHA-256 de `libcocos2dcpp.so`, os símbolos C++ e **29 operações específicas** entre as **332 instruções** de `GetDamageValue(bool*)`. Também confirma o valor `100.0` do objeto global `LogicWorkshopMgr::DECIMAL_RATIO`, conferindo sua relocação.
+
+A expressão de um ramo da função é reproduzida apenas como **núcleo aritmético parcial**:
+
+`base = A - B * (1 - C / 100)`
+
+`fator = (sorteio <= trunc(limiar)) ? D / 100 : 1`
+
+`parcial = base * fator * (1 - E / 100)`
+
+Os seis parâmetros aparecem na configuração nativa nas posições `0x38`, `0x40`, `0x48`, `0x58`, `0x50`, `0x60` (na ordem A, B, limiar, C, D, E). A biblioteca também chama uma função de números aleatórios com argumentos observados `0, 1, 100`, **sem que sua distribuição seja assumida**. A função contém um retorno do valor previamente calculado, tratamento especial para tipo de mapa 7 e ajustes adicionais por entidade-alvo: esses ramos **não são emulados**.
+
+- **Novo analisador:** `python tools/analisar_formula_dano.py` gera `reports/damage_math.json` e `reports/damage_math.lua` sem copiar instruções binárias para o GitHub.
+- **Módulo isolado:** `src/damage_math.lua` reproduz exclusivamente os operadores aritméticos confirmados, recebendo parâmetros e sorteio explícitos; não gera sorteios, não altera HP e não executa efeitos.
+- **Nova aba:** **Dano** (`Ctrl+M`) exibe proveniência, constantes e resultado de um exemplo **inventado somente para teste dos operadores**. As setas mudam o sorteio e o limiar desse exemplo, sem qualquer efeito no teste jogável.
+- **Testes:** `python -m unittest discover -s tests -p 'test_*.py'` valida o binário original, o resultado Lua e as regressões existentes.
+
+**Limites obrigatórios:** os valores concretos do bárbaro e da habilidade `4010020` não foram estabelecidos, nem o vínculo dessa habilidade ao cálculo, os modificadores de alvo, distribuição do RNG, arredondamento ou timing de acertos. A cena `Ctrl+P` continua **sem dano, inimigos ou combate funcional**. A execução gráfica real em Windows ainda está pendente de teste.

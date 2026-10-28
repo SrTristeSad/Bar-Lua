@@ -1,7 +1,7 @@
 -- Bar-Lua | laboratório de engenharia reversa do BarbarQ 1.0.1811.
 -- NÃO é o jogo: apenas visualização fiel de dados originais decodificados.
-local modes = {"Mapas TMX", "Imagens", "Atlas .plist/.bplist", "Configurações", "Animações", "Cenas .csb", "ELF ARM64", "Fluxo ARM64", "Movimento ARM64", "Entity / Box2D", "Contatos ARM64", "Colisores ARM64", "Filtros Box2D", "Teste de movimento", "Habilidades (dados)"}
-local tabLabels = {"Mapas", "Imagens", "Atlas", "Config.", "Animações", "Cenas", "ELF", "Fluxo", "Mov.", "Entid.", "Contato", "Colisão", "Filtros", "Teste", "Skills"}
+local modes = {"Mapas TMX", "Imagens", "Atlas .plist/.bplist", "Configurações", "Animações", "Cenas .csb", "ELF ARM64", "Fluxo ARM64", "Movimento ARM64", "Entity / Box2D", "Contatos ARM64", "Colisores ARM64", "Filtros Box2D", "Teste de movimento", "Habilidades (dados)", "Combate ARM64", "Núcleo de dano ARM64"}
+local tabLabels = {"Mapas", "Imagens", "Atlas", "Config.", "Animações", "Cenas", "ELF", "Fluxo", "Mov.", "Entid.", "Contato", "Colisão", "Filtros", "Teste", "Skills", "Combate", "Dano"}
 local animationView = require("src.animation_view")
 local sceneView = require("src.scene_view")
 local nativeView = require("src.native_view")
@@ -13,14 +13,18 @@ local colliderView = require("src.collider_view")
 local filterView = require("src.filter_view")
 local playtest = require("src.playtest")
 local skillView = require("src.skill_view")
+local combatView = require("src.combat_view")
+local damageMathView = require("src.damage_math_view")
 local sceneResources = require("src.scene_resources")
 local spriteGeometry = require("src.sprite_geometry")
 local mode, selected, search, zoom = 1, 1, "", 1
-local lists = {{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}}
+local lists = {{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}}
 local maps, atlases, animations, scenes, nativeCatalog, flowCatalog, contactCatalog, colliderCatalog, filterCatalog = {}, {}, {}, {}, {}, {}, {}, {}, {}
 local sceneResourceIndex = nil
 local skillCatalog = {links={},tables={}}
 local skillTrace = {}
+local combatCatalog = {}
+local damageReport = {}
 local imageIndex = {}
 local textures, quads = {}, {}
 local position = {x = 0, y = 0}
@@ -137,7 +141,7 @@ local function drawShell(w, h, list)
     for i, name in ipairs(modes) do
         local x = 14 + (i - 1) * tabwidth
         if i == mode then background(x - 3, 49, tabwidth - 6, 31, {0.28, 0.37, 0.46}) end
-        put((i == 14 and "Teste" or i == 15 and "Skills" or ("F" .. i .. " " .. tabLabels[i])), x, 55, {0.94, 0.94, 1}, small)
+        put((i == 14 and "Teste" or i == 15 and "Skills" or i == 16 and "Combate" or i == 17 and "Dano" or ("F" .. i .. " " .. tabLabels[i])), x, 55, {0.94, 0.94, 1}, small)
     end
     background(0, TOP, SIDE, h - TOP, {0.10, 0.13, 0.17})
     put("Filtrar: " .. search .. "_", 12, TOP + 10, {1, 0.82, 0.44}, small)
@@ -154,7 +158,7 @@ local function drawShell(w, h, list)
         put(label, 13, y, i == selected and {1, 1, 1} or {0.74, 0.80, 0.84}, small)
     end
     background(0, h - BOTTOM, w, BOTTOM, {0.12, 0.16, 0.20})
-    put("↑↓: selecionar  •  [ ]: sprite  •  Ctrl+F12: filtros  •  Ctrl+P: teste  •  J/K/L: ataques (prévia)  •  Esc: limpar", 13, h - BOTTOM + 7, {0.85, 0.90, 0.96}, small)
+    put("↑↓: selecionar  •  Ctrl+M: fórmula parcial  •  Ctrl+P: teste  •  J/K/L: ataques (prévia)", 13, h - BOTTOM + 7, {0.85, 0.90, 0.96}, small)
     put(status, 13, h - BOTTOM + 29, {0.72, 0.80, 0.87}, small)
 end
 
@@ -372,6 +376,8 @@ function love.load()
     filterCatalog = readLua("reports/native_filters.lua")
     skillCatalog = readLua("cache/skill_catalog.lua")
     skillTrace = readLua("cache/skill_trace.lua")
+    combatCatalog = readLua("reports/native_combat.lua")
+    damageReport = readLua("reports/damage_math.lua")
     for _, map in ipairs(maps) do lists[1][#lists[1]+1] = map end
     scan("assets_original", {png = true, jpg = true, jpeg = true}, lists[2])
     for _, atlas in ipairs(atlases) do lists[3][#lists[3]+1] = atlas end
@@ -387,6 +393,8 @@ function love.load()
     for _,entry in ipairs(filterCatalog) do lists[13][#lists[13]+1] = entry end
     for _,map in ipairs(maps) do lists[14][#lists[14]+1] = map end
     for _,row in ipairs(skillCatalog.links or {}) do lists[15][#lists[15]+1] = row end
+    for _,row in ipairs(combatCatalog) do lists[16][#lists[16]+1] = row end
+    lists[17][1] = {name="GetDamageValue: núcleo matemático"}
     for _, path in ipairs(lists[2]) do
         imageIndex[path:gsub("^assets_original/", ""):lower()] = path:gsub("^assets_original/", "")
     end
@@ -468,6 +476,10 @@ function love.draw()
         filterView.draw(item, {x=x, y=y, w=pw, h=ph, put=put, background=background, small=small})
     elseif mode == 15 then
         skillView.draw(item,{x=x,y=y,w=pw,h=ph,put=put,background=background,small=small},skillCatalog.tables,skillTrace)
+    elseif mode == 17 then
+        damageMathView.draw(damageReport,{x=x,y=y,w=pw,h=ph,put=put,background=background,small=small})
+    elseif mode == 16 then
+        combatView.draw(item,{x=x,y=y,w=pw,h=ph,put=put,background=background,small=small})
     elseif mode == 14 and item then
         local camera = drawMap(item,x,y,pw,ph,true)
         playtest.draw({x=x,y=y,w=pw,h=ph},camera,
@@ -481,6 +493,8 @@ end
 function love.keypressed(key)
     if key == 'p' and love.keyboard.isDown('lctrl','rctrl') then setMode(14); return end
     if key == 'h' and love.keyboard.isDown('lctrl','rctrl') then setMode(15); return end
+    if key == 'd' and love.keyboard.isDown('lctrl','rctrl') then setMode(16); return end
+    if key == 'm' and love.keyboard.isDown('lctrl','rctrl') then setMode(17); return end
     if mode == 14 then
         if key == 'r' then
             local ok=playtest.start(selectedItem(),playtest.findHero(animations),atlases)
@@ -499,6 +513,7 @@ function love.keypressed(key)
     if key == "f12" and love.keyboard.isDown("lctrl", "rctrl") then setMode(13); return end
     local n = tonumber(key:match("^f(%d+)$"))
     if n and n >= 1 and n <= #modes then setMode(n); return end
+    if mode == 17 and damageMathView.keypressed(key) then return end
     if mode == 13 and filterView.keypressed(key) then return end
     if mode == 10 and entityMoveView.keypressed(key) then return end
     if mode == 9 and movementView.keypressed(key) then return end
@@ -557,7 +572,7 @@ function love.textinput(text)
     if mode == 3 and (text == "[" or text == "]") then return end
     if mode == 5 and (text:lower() == "i" or text:lower() == "b" or text:lower() == "p") then return end
     if mode == 6 and (text:lower() == "g" or text:lower() == "v" or text:lower() == "t") then return end
-    if mode == 9 or mode == 10 or mode == 13 or mode == 14 then return end
+    if mode == 9 or mode == 10 or mode == 13 or mode == 14 or mode == 16 or mode == 17 then return end
     if mode ~= 1 and #search < 80 and text:match("%g") then search = search .. text; selected = 1; resetImage(); if mode == 5 then animationView.reset() end; if mode == 6 then sceneView.reset() end end
 end
 
