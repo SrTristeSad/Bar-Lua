@@ -1,0 +1,60 @@
+{
+  "phase": 27,
+  "apk_version": "1.0.1811",
+  "library_sha256": "8199604d199b57ebe329725c9a624b85517f495f78c1dad745449684750e4677",
+  "functions": [
+    {
+      "name": "Hero::update",
+      "address": "0xe58e84",
+      "instructions": 225,
+      "checks": 16
+    },
+    {
+      "name": "Hero::reborn",
+      "address": "0xe57ee0",
+      "instructions": 69,
+      "checks": 13
+    },
+    {
+      "name": "Entity::reborn",
+      "address": "0xe4d4dc",
+      "instructions": 1,
+      "checks": 1
+    },
+    {
+      "name": "Hero::resetReviveData",
+      "address": "0xe57bd0",
+      "instructions": 96,
+      "checks": 9
+    }
+  ],
+  "total_instructions": 391,
+  "total_checks": 39,
+  "virtual_slots": {
+    "hero_update": {
+      "relocation_address": "0x24be6e0",
+      "symbol": "_ZN4Hero6updateEf"
+    },
+    "hero_reborn": {
+      "relocation_address": "0x24be720",
+      "symbol": "_ZN4Hero6rebornEb"
+    },
+    "hero_die_logic": {
+      "relocation_address": "0x24be768",
+      "symbol": "_ZN4Hero8dieLogicEv"
+    },
+    "entity_reborn": {
+      "relocation_address": "0x24bdb40",
+      "symbol": "_ZN6Entity6rebornEb"
+    }
+  },
+  "facts": {
+    "death_schedule": "Hero::update lê +0x1bc; quando não zero, chama método virtual +0x98 (Hero::dieLogic pela vtable).",
+    "respawn_call": "O trecho final de Hero::update possui uma chamada virtual +0x50 (Hero::reborn pela vtable), condicionada por verificação de marco de tempo, estado do BattleManager e valor +0x574.",
+    "respawn_flag": "A chamada no trecho de Hero::update passa true para o argumento bool de Hero::reborn; não é prova de intervalo em segundos.",
+    "reborn": "Hero::reborn chama Entity::reborn (ret puro), zera +0x190, restaura identificador de atacante +0x370 para -1, executa resetReviveData e emite evento.",
+    "reset": "resetReviveData só chama GetRandomBirthPlace/Box2D::SetTransform quando o argumento bool está ativo. Executa reInit, setLevel e setScore em caminhos confirmados.",
+    "live": "PlayerInfoManager::setPlayerLive(true) é chamado se o registro do jogador existir; ausência do registro pula esse ramo."
+  },
+  "limits": "Não se afirma segundos de respawn, tempo exato de animações, rota de rede, proteção de spawn, regra integral dos modos, HP final nem que o leitor Lua reproduza reborn nativo."
+}

@@ -1,0 +1,26 @@
+package.path='./?.lua;./?/init.lua;'..package.path
+local R=require('src.reborn_rules')
+local function ok(f,last,clock,battle,die,revive)
+    local x,msg=R.inspect(f,last,clock,battle)
+    assert(x,msg)
+    assert(x.update_calls_die_logic==die)
+    assert(x.update_calls_reborn==revive)
+    assert(x.native_side_effects_executed==false)
+    assert(x.timer_unit_known==false)
+end
+ok(1,0,1050,true,true,true)
+ok(1,0,1049,true,true,false)
+ok(0,0,1050,true,false,true)
+ok(1,0,1050,false,true,false)
+ok(1,-1,1200,true,true,false)
+ok(0,0,0,true,false,false)
+ok(0,100,1100,true,false,false)
+ok(0,100,1150,true,false,true)
+local rejects={{2,0,1500,true},{-1,0,1050,true},{1,900,899,true},{1,0,-1,true},{1,0,5,1},{1,1.5,3,true}}
+for _,args in ipairs(rejects) do assert(R.inspect(unpack(args))==nil) end
+local view=require('src.reborn_view')
+assert(view.keypressed('left') and view.keypressed('right'))
+assert(view.keypressed('up') and view.keypressed('down'))
+assert(not view.keypressed('x'))
+assert(view.keypressed('r') and view.flag==1 and view.battle==true)
+print('F27 REBORN LUA OK')
