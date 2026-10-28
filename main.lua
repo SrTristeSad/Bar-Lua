@@ -1,7 +1,7 @@
 -- Bar-Lua | laboratório de engenharia reversa do BarbarQ 1.0.1811.
 -- NÃO é o jogo: apenas visualização fiel de dados originais decodificados.
-local modes = {"Mapas TMX", "Imagens", "Atlas .plist/.bplist", "Configurações", "Animações", "Cenas .csb", "ELF ARM64", "Fluxo ARM64", "Movimento ARM64", "Entity / Box2D", "Contatos ARM64", "Colisores ARM64", "Filtros Box2D", "Teste de movimento"}
-local tabLabels = {"Mapas", "Imagens", "Atlas", "Config.", "Animações", "Cenas", "ELF", "Fluxo", "Mov.", "Entid.", "Contato", "Colisão", "Filtros", "Teste"}
+local modes = {"Mapas TMX", "Imagens", "Atlas .plist/.bplist", "Configurações", "Animações", "Cenas .csb", "ELF ARM64", "Fluxo ARM64", "Movimento ARM64", "Entity / Box2D", "Contatos ARM64", "Colisores ARM64", "Filtros Box2D", "Teste de movimento", "Habilidades (dados)"}
+local tabLabels = {"Mapas", "Imagens", "Atlas", "Config.", "Animações", "Cenas", "ELF", "Fluxo", "Mov.", "Entid.", "Contato", "Colisão", "Filtros", "Teste", "Skills"}
 local animationView = require("src.animation_view")
 local sceneView = require("src.scene_view")
 local nativeView = require("src.native_view")
@@ -12,12 +12,15 @@ local contactView = require("src.contact_view")
 local colliderView = require("src.collider_view")
 local filterView = require("src.filter_view")
 local playtest = require("src.playtest")
+local skillView = require("src.skill_view")
 local sceneResources = require("src.scene_resources")
 local spriteGeometry = require("src.sprite_geometry")
 local mode, selected, search, zoom = 1, 1, "", 1
-local lists = {{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}}
+local lists = {{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}}
 local maps, atlases, animations, scenes, nativeCatalog, flowCatalog, contactCatalog, colliderCatalog, filterCatalog = {}, {}, {}, {}, {}, {}, {}, {}, {}
 local sceneResourceIndex = nil
+local skillCatalog = {links={},tables={}}
+local skillTrace = {}
 local imageIndex = {}
 local textures, quads = {}, {}
 local position = {x = 0, y = 0}
@@ -134,7 +137,7 @@ local function drawShell(w, h, list)
     for i, name in ipairs(modes) do
         local x = 14 + (i - 1) * tabwidth
         if i == mode then background(x - 3, 49, tabwidth - 6, 31, {0.28, 0.37, 0.46}) end
-        put((i == 14 and "Teste" or ("F" .. i .. " " .. tabLabels[i])), x, 55, {0.94, 0.94, 1}, small)
+        put((i == 14 and "Teste" or i == 15 and "Skills" or ("F" .. i .. " " .. tabLabels[i])), x, 55, {0.94, 0.94, 1}, small)
     end
     background(0, TOP, SIDE, h - TOP, {0.10, 0.13, 0.17})
     put("Filtrar: " .. search .. "_", 12, TOP + 10, {1, 0.82, 0.44}, small)
@@ -367,6 +370,8 @@ function love.load()
     contactCatalog = readLua("reports/native_contacts.lua")
     colliderCatalog = readLua("reports/native_colliders.lua")
     filterCatalog = readLua("reports/native_filters.lua")
+    skillCatalog = readLua("cache/skill_catalog.lua")
+    skillTrace = readLua("cache/skill_trace.lua")
     for _, map in ipairs(maps) do lists[1][#lists[1]+1] = map end
     scan("assets_original", {png = true, jpg = true, jpeg = true}, lists[2])
     for _, atlas in ipairs(atlases) do lists[3][#lists[3]+1] = atlas end
@@ -381,6 +386,7 @@ function love.load()
     for _,entry in ipairs(colliderCatalog) do lists[12][#lists[12]+1] = entry end
     for _,entry in ipairs(filterCatalog) do lists[13][#lists[13]+1] = entry end
     for _,map in ipairs(maps) do lists[14][#lists[14]+1] = map end
+    for _,row in ipairs(skillCatalog.links or {}) do lists[15][#lists[15]+1] = row end
     for _, path in ipairs(lists[2]) do
         imageIndex[path:gsub("^assets_original/", ""):lower()] = path:gsub("^assets_original/", "")
     end
@@ -460,6 +466,8 @@ function love.draw()
         colliderView.draw(item, {x=x, y=y, w=pw, h=ph, put=put, background=background, small=small})
     elseif mode == 13 then
         filterView.draw(item, {x=x, y=y, w=pw, h=ph, put=put, background=background, small=small})
+    elseif mode == 15 then
+        skillView.draw(item,{x=x,y=y,w=pw,h=ph,put=put,background=background,small=small},skillCatalog.tables,skillTrace)
     elseif mode == 14 and item then
         local camera = drawMap(item,x,y,pw,ph,true)
         playtest.draw({x=x,y=y,w=pw,h=ph},camera,
@@ -472,6 +480,7 @@ end
 
 function love.keypressed(key)
     if key == 'p' and love.keyboard.isDown('lctrl','rctrl') then setMode(14); return end
+    if key == 'h' and love.keyboard.isDown('lctrl','rctrl') then setMode(15); return end
     if mode == 14 then
         if key == 'r' then
             local ok=playtest.start(selectedItem(),playtest.findHero(animations),atlases)

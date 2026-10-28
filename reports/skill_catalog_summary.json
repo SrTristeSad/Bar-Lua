@@ -1,0 +1,31 @@
+{
+  "phase": 21,
+  "apk_version": "1.0.1811",
+  "tables": {
+    "heroskillconfig": 31119,
+    "functionbindskill": 566,
+    "functiondamage": 687,
+    "functionanimation": 1489,
+    "functionrandomskill": 726,
+    "functiondelayskill": 27948,
+    "selectsector": 84,
+    "skilleventregister": 98
+  },
+  "table_sha256": {
+    "heroskillconfig": "e369f3a97549e67bf48999dd668017c638e355d648cb7ee2b7f4430afc6d859a",
+    "functionbindskill": "7d225cb10fa454deb7b40829eaecd027618cd1427d01e0ac7f8799f1050edf49",
+    "functiondamage": "8da9da39bdbd98db2362738f1188181c63abe4034c33b8495e600a277aac168d",
+    "functionanimation": "8d0cfaec8d9a446b454da27301fff439c6ecf55d694621ff0ad972f6dad59594",
+    "functionrandomskill": "3de4ec13f84ba6fba2bcc77622965da3be2aff09a4efc762e97b4e264026d0d8",
+    "functiondelayskill": "fa17e9db29b332251146e6b50ce580556b331aa9df1477b5a764e711b87f0646",
+    "selectsector": "385aece1b985ad3103f7c6b37d9dd57a8e52c9edcf7b66d7778070933fc142e7",
+    "skilleventregister": "07d3d3db8536d6c24e39beb948c9a94aa485a25be1cd4e30617236b0ed789dfa"
+  },
+  "button_links": 566,
+  "distinct_skills_in_links": 271,
+  "known_example": {
+    "binding_id": 10039,
+    "skill_config_id": 4010020
+  },
+  "limits": "Os IDs e nomes do vínculo são dados de configuração. Eles não provam dano, hitbox, duração de recarga ou correspondência entre cada tecla e animação."
+}

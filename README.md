@@ -2,6 +2,61 @@
 
 **Objetivo:** estudar um APK original do BarbarQ e reproduzir sua experiência no PC com **Lua e LÖVE2D**, sem emulador Android. Isto **não** é um jogo inspirado no BarbarQ. Os recursos recuperados servem de referência, mas portar a lógica original exige engenharia reversa adicional.
 
+## Fase 22 — rastreamento de alvos e referências de habilidades (sem dano jogável)
+
+O analisador `tools/rastrear_habilidades.py` indexa **72.765 registros** de 13 tabelas
+originais, conferindo o SHA-256 das oito tabelas estudadas na Fase 21. Encontrou
+**74.308 pares de IDs** via ocorrência de tokens numéricos completos entre registros.
+**Essas ocorrências são candidatas de referência, NÃO necessariamente arestas de
+execução.** Campos ainda não tiveram seus esquemas binários ou semântica de
+execução reconstruídos.
+
+- **Vínculo confirmado:** `functionbindskill` ID `10039` usa botão de código `2`
+  e aponta para a configuração de habilidade `4010020` (ataque do bárbaro).
+- A configuração `4010020` tem **uma referência de entrada** e **nenhuma saída
+  identificável** nas tabelas auditadas. Não há ligação comprovada até uma
+  fórmula de dano, um seletor de alvos, um hitbox ou um cooldown.
+- A habilidade `4020020` contém menção ao seletor em setor `10052`, e o
+  registro `functionrandomskill` `10070` menciona `4070020` e `4080020`.
+  Isso **não prova** que o botão `10039` passa por esses registros.
+- A aba **Skills / Ctrl+H** agora mostra a contagem e prévia das referências
+  numéricas recebidas/citadas pela habilidade selecionada; continua somente
+  um inspetor de dados, sem ativar habilidades.
+- `cache/skill_trace.lua` inclui rótulos do APK e é **privado/local**.
+  `reports/skill_trace_summary.json` contém apenas contagens, hashes,
+  IDs exemplificativos e limitações, adequado para GitHub público.
+
+Reproduza depois de extrair o APK e gerar a Fase 21:
+
+```bash
+python tools/catalogar_habilidades.py
+python tools/rastrear_habilidades.py
+python -m pytest -q tests
+```
+
+**Validação:** 74 testes + 10 subtestes passaram. Sem teste gráfico real no
+Windows. A cena Ctrl+P com movimento e prévia de ataques está preservada,
+sem causar dano a entidades e sem criar regras inventadas.
+
+---
+
+## Fase 21 — catálogo de habilidades e análise do ciclo de execução (ainda não há dano funcional)
+
+A reconstrução continua sendo **fiel ao BarbarQ**, sem substituir mecânicas por outras inventadas. Nesta etapa: 
+
+- `tools/catalogar_habilidades.py` interpreta as tabelas `config.skill.*.txt` por campos de descrição com tamanho UTF-8 em **bytes**. Valida IDs únicos, comprimentos, referências e caracteres UTF-8 sem executar dados do APK.
+- As oito tabelas auditadas contêm **31.119** configurações `heroskillconfig`, **566** vínculos `functionbindskill`, **687** registros `functiondamage`, **1.489** `functionanimation`, **726** `functionrandomskill`, **27.948** `functiondelayskill`, **84** `selectsector` e **98** `skilleventregister`.
+- **566/566** vínculos de botão apontam para IDs existentes de habilidades. Por exemplo, o registro `10039` (ataque do bárbaro) indica código de botão `2` e habilidade `4010020` na configuração original. Isto **não comprova** equivalência com a tecla J, K ou L, que são atalhos de prévia.
+- `tools/analisar_habilidades.py` audita **sete funções**, **494 instruções ARM64**, com checagem SHA-256 do ELF. `Hero::onButtonClicked` solicita uma habilidade e a entrega a `Entity::addSkill`. O construtor seleciona entre `CSelfSkill` e `CMultiTargetSkill` conforme o tipo `10050`. A função base `CSkill::Update(float)` contém apenas `ret`; subclasses podem possuir comportamentos próprios.
+- Um painel **Habilidades** fica disponível por clique na aba superior ou **Ctrl+H**; lista vínculos e seus IDs usando o arquivo local `cache/skill_catalog.lua`. A interface permanece de **pesquisa**, não executa habilidades.
+- Os relatórios públicos `reports/skill_catalog_summary.json` e `reports/native_skill_flow.json` contêm metadados e IDs, sem copiar recursos, tabelas completas ou código de máquina.
+
+**Preparação do cache da Fase 21:** após extrair o APK e preparar as demais tabelas como nas etapas anteriores, execute `python tools/catalogar_habilidades.py`. O cache e os recursos permanecem locais, fora do GitHub.
+
+**Validação:** `python -m pytest -q tests` passou com **71 testes e 10 subtestes**. Não foi executado teste gráfico no Windows. A física da cena de teste, a escolha da animação, o dano, o hitbox, a seleção de alvos e o cooldown **não estão comprovados como fiéis**.
+
+---
+
 ## Fase 19 — objetos de mapa TMX com física experimental (NÃO partida original)
 
 **Inventário verificado no APK 1.0.1811:** 32 arquivos `.tmx`; apenas os cinco

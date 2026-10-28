@@ -1,0 +1,77 @@
+{
+  "phase": 21,
+  "apk_version": "1.0.1811",
+  "library_sha256": "8199604d199b57ebe329725c9a624b85517f495f78c1dad745449684750e4677",
+  "functions": {
+    "Hero::onButtonClicked": {
+      "virtual_address": "0xe57918",
+      "size_bytes": 104,
+      "instruction_count": 26,
+      "checks": [
+        "add_skill_call",
+        "button_range_guard",
+        "config_id_read",
+        "creator_call"
+      ]
+    },
+    "Entity::addSkill(configId)": {
+      "virtual_address": "0xe46b7c",
+      "size_bytes": 456,
+      "instruction_count": 114,
+      "checks": [
+        "config_family_check",
+        "create_skill_call",
+        "handoff_to_entity",
+        "level_assignment"
+      ]
+    },
+    "Entity::addSkill(skillPtr)": {
+      "virtual_address": "0xe48744",
+      "size_bytes": 552,
+      "instruction_count": 138,
+      "checks": [
+        "null_pointer_guard",
+        "release_call"
+      ]
+    },
+    "CSkill::CreateSkillBySkillConfigId": {
+      "virtual_address": "0xe650b4",
+      "size_bytes": 320,
+      "instruction_count": 80,
+      "checks": [
+        "multi_target_constructor",
+        "self_skill_constructor",
+        "type_10050",
+        "virtual_init_call"
+      ]
+    },
+    "CSkill::SetTargetEntitys": {
+      "virtual_address": "0xe65204",
+      "size_bytes": 412,
+      "instruction_count": 103,
+      "checks": []
+    },
+    "CSkill::Release": {
+      "virtual_address": "0xe65034",
+      "size_bytes": 128,
+      "instruction_count": 32,
+      "checks": []
+    },
+    "CSkill::Update(float)": {
+      "virtual_address": "0xe65200",
+      "size_bytes": 4,
+      "instruction_count": 1,
+      "checks": [
+        "empty_base_update"
+      ]
+    }
+  },
+  "total_instructions": 494,
+  "verified_facts": [
+    "Hero::onButtonClicked cria a habilidade configurada e a entrega a Entity::addSkill.",
+    "Entity::addSkill(int,...) confere a família de ID 20 antes de criar habilidade e ajustar nível.",
+    "CreateSkillBySkillConfigId escolhe entre CSelfSkill e CMultiTargetSkill usando tipo 10050.",
+    "A implementação base CSkill::Update(float) tem apenas a instrução ret."
+  ],
+  "limits": "Não recupera execução de efeitos, cálculo de dano, identificação de hitbox, cooldown nem estados internos de subclasses. Métodos dinâmicos podem sobrescrever Update."
+}

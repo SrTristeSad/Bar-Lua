@@ -1,0 +1,58 @@
+{
+  "phase": 22,
+  "apk_version": "1.0.1811",
+  "tables": {
+    "heroskillconfig": 31119,
+    "functionbindskill": 566,
+    "functiondamage": 687,
+    "functionanimation": 1489,
+    "functionrandomskill": 726,
+    "functiondelayskill": 27948,
+    "selectsector": 84,
+    "skilleventregister": 98,
+    "selectcircle": 311,
+    "selectrect": 92,
+    "selectnearest": 200,
+    "functionrepeat": 1308,
+    "functionbuff": 8137
+  },
+  "table_sha256": {
+    "heroskillconfig": "e369f3a97549e67bf48999dd668017c638e355d648cb7ee2b7f4430afc6d859a",
+    "functionbindskill": "7d225cb10fa454deb7b40829eaecd027618cd1427d01e0ac7f8799f1050edf49",
+    "functiondamage": "8da9da39bdbd98db2362738f1188181c63abe4034c33b8495e600a277aac168d",
+    "functionanimation": "8d0cfaec8d9a446b454da27301fff439c6ecf55d694621ff0ad972f6dad59594",
+    "functionrandomskill": "3de4ec13f84ba6fba2bcc77622965da3be2aff09a4efc762e97b4e264026d0d8",
+    "functiondelayskill": "fa17e9db29b332251146e6b50ce580556b331aa9df1477b5a764e711b87f0646",
+    "selectsector": "385aece1b985ad3103f7c6b37d9dd57a8e52c9edcf7b66d7778070933fc142e7",
+    "skilleventregister": "07d3d3db8536d6c24e39beb948c9a94aa485a25be1cd4e30617236b0ed789dfa",
+    "selectcircle": "9d0b074d6fb3d5fd45252ecd19ff855793b87e6ee13e3bfc7c7023ad3919104d",
+    "selectrect": "58da8903127a005c8756412ab00c8b0a716c37b1b47944ea1d9e8752cfc087ab",
+    "selectnearest": "fd5c8aaa939f230fcdb6db9bfcae37e6a2d77a1cf6ac66a852cb19fd039b72f3",
+    "functionrepeat": "6a55c0d0f67982bb2c54ea8679b3361f8e1bf94325d46f135d763cbb38ab8370",
+    "functionbuff": "dd400fa5b3ecfbc0ff47f59098a9b81247238ed261aab18b107f3488c6ccf314"
+  },
+  "indexed_records": 72765,
+  "unique_reference_pairs": 74308,
+  "referenced_target_ids": 67341,
+  "selected_skill_ids": 277,
+  "verified_binding": {
+    "binding_id": 10039,
+    "button_code": 2,
+    "skill_id": 4010020
+  },
+  "example": {
+    "skill_id": 4010020,
+    "incoming_ids": [
+      10039
+    ],
+    "outgoing_ids": [],
+    "sector_selector_id": 10052,
+    "selector_mentioned_by_skill_id": 4020020,
+    "random_animation_record_id": 10070,
+    "random_animation_skill_ids": [
+      4070020,
+      4080020
+    ]
+  },
+  "limits": "As arestas são coincidências de tokens inteiros entre tabelas, NÃO vínculos de execução confirmados. Apenas o formato dos campos de functionbindskill está interpretado. O ID 4010020 não expõe ligações diretas para dano ou seleção de alvos nestas tabelas. Não implementar dano, alcance ou cooldown com base neste índice."
+}
