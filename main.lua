@@ -1,7 +1,7 @@
 -- Bar-Lua | laboratório de engenharia reversa do BarbarQ 1.0.1811.
 -- NÃO é o jogo: apenas visualização fiel de dados originais decodificados.
-local modes = {"Mapas TMX", "Imagens", "Atlas .plist/.bplist", "Configurações", "Animações", "Cenas .csb", "ELF ARM64", "Fluxo ARM64", "Movimento ARM64", "Entity / Box2D", "Contatos ARM64", "Colisores ARM64", "Filtros Box2D"}
-local tabLabels = {"Mapas", "Imagens", "Atlas", "Config.", "Animações", "Cenas", "ELF", "Fluxo", "Mov.", "Entid.", "Contato", "Colisão", "Filtros"}
+local modes = {"Mapas TMX", "Imagens", "Atlas .plist/.bplist", "Configurações", "Animações", "Cenas .csb", "ELF ARM64", "Fluxo ARM64", "Movimento ARM64", "Entity / Box2D", "Contatos ARM64", "Colisores ARM64", "Filtros Box2D", "Teste de movimento"}
+local tabLabels = {"Mapas", "Imagens", "Atlas", "Config.", "Animações", "Cenas", "ELF", "Fluxo", "Mov.", "Entid.", "Contato", "Colisão", "Filtros", "Teste"}
 local animationView = require("src.animation_view")
 local sceneView = require("src.scene_view")
 local nativeView = require("src.native_view")
@@ -11,10 +11,11 @@ local entityMoveView = require("src.entity_move_view")
 local contactView = require("src.contact_view")
 local colliderView = require("src.collider_view")
 local filterView = require("src.filter_view")
+local playtest = require("src.playtest")
 local sceneResources = require("src.scene_resources")
 local spriteGeometry = require("src.sprite_geometry")
 local mode, selected, search, zoom = 1, 1, "", 1
-local lists = {{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}}
+local lists = {{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}}
 local maps, atlases, animations, scenes, nativeCatalog, flowCatalog, contactCatalog, colliderCatalog, filterCatalog = {}, {}, {}, {}, {}, {}, {}, {}, {}
 local sceneResourceIndex = nil
 local imageIndex = {}
@@ -62,6 +63,17 @@ local function setMode(index)
     animationView.reset()
     sceneView.reset()
     filterView.reset()
+    if mode == 14 then
+        for i, m in ipairs(lists[14]) do
+            if m.name == 'petisland_01' then selected = i; break end
+        end
+        local m = lists[14][selected]
+        if m then
+            local hero = playtest.findHero(animations)
+            local ok = playtest.start(m,hero,atlases)
+            if not ok then status = playtest.state().error or 'Teste indisponível' end
+        end
+    end
 end
 
 local function visibleList()
@@ -122,7 +134,7 @@ local function drawShell(w, h, list)
     for i, name in ipairs(modes) do
         local x = 14 + (i - 1) * tabwidth
         if i == mode then background(x - 3, 49, tabwidth - 6, 31, {0.28, 0.37, 0.46}) end
-        put("F" .. i .. " " .. tabLabels[i], x, 55, {0.94, 0.94, 1}, small)
+        put((i == 14 and "Teste" or ("F" .. i .. " " .. tabLabels[i])), x, 55, {0.94, 0.94, 1}, small)
     end
     background(0, TOP, SIDE, h - TOP, {0.10, 0.13, 0.17})
     put("Filtrar: " .. search .. "_", 12, TOP + 10, {1, 0.82, 0.44}, small)
@@ -139,7 +151,7 @@ local function drawShell(w, h, list)
         put(label, 13, y, i == selected and {1, 1, 1} or {0.74, 0.80, 0.84}, small)
     end
     background(0, h - BOTTOM, w, BOTTOM, {0.12, 0.16, 0.20})
-    put("↑↓: selecionar  •  [ ]: sprite  •  F1–F13: painel  •  Esc: limpar", 13, h - BOTTOM + 7, {0.85, 0.90, 0.96}, small)
+    put("↑↓: selecionar  •  [ ]: sprite  •  Ctrl+F12: filtros  •  Ctrl+P: teste  •  Esc: limpar", 13, h - BOTTOM + 7, {0.85, 0.90, 0.96}, small)
     put(status, 13, h - BOTTOM + 29, {0.72, 0.80, 0.87}, small)
 end
 
@@ -168,7 +180,7 @@ local function tileQuad(ts, gid, img)
     return quads[key]
 end
 
-local function drawMap(map, x, y, w, h)
+local function drawMap(map, x, y, w, h, withoutReticle)
     background(x, y, w, h, {0.14, 0.18, 0.18})
     -- Exibe apenas tiles visíveis: mapas 128x128 não geram 16.384 draw calls por quadro.
     local scale = zoom
@@ -213,12 +225,17 @@ local function drawMap(map, x, y, w, h)
     end
     love.graphics.setScissor()
     -- Retículo de depuração da câmera; NÃO representa personagem/colisão do BarbarQ.
+    if not withoutReticle then
     love.graphics.setColor(0.96, 0.83, 0.32, 0.95)
     love.graphics.circle("line", x + (position.x - left) * scale, y + (position.y - top) * scale, 11)
     love.graphics.line(x + (position.x - left) * scale - 14, y + (position.y - top) * scale,
         x + (position.x - left) * scale + 14, y + (position.y - top) * scale)
+    end
     put(string.format("%s  |  %dx%d tiles  |  célula %dx%d  |  zoom %.2fx", map.name, map.width, map.height, tw, th, zoom), x + 12, y + 10, {1, 1, 1}, small)
-    put("WASD: deslocar câmera  •  roda do mouse: zoom  •  retículo = depuração", x + 12, y + h - 27, {1, 1, 1}, small)
+    if not withoutReticle then
+        put("WASD: deslocar câmera  •  roda do mouse: zoom  •  retículo = depuração", x + 12, y + h - 27, {1, 1, 1}, small)
+    end
+    return {left=left,top=top,scale=scale}
 end
 
 local function drawImage(item, x, y, w, h)
@@ -363,6 +380,7 @@ function love.load()
     for _,entry in ipairs(contactCatalog) do lists[11][#lists[11]+1] = entry end
     for _,entry in ipairs(colliderCatalog) do lists[12][#lists[12]+1] = entry end
     for _,entry in ipairs(filterCatalog) do lists[13][#lists[13]+1] = entry end
+    for _,map in ipairs(maps) do lists[14][#lists[14]+1] = map end
     for _, path in ipairs(lists[2]) do
         imageIndex[path:gsub("^assets_original/", ""):lower()] = path:gsub("^assets_original/", "")
     end
@@ -381,6 +399,11 @@ function love.load()
 end
 
 function love.update(dt)
+    if mode == 14 then
+        playtest.update(dt, function(key) return love.keyboard.isDown(key) end)
+        local px,py = playtest.playerPosition()
+        if px then position.x,position.y=px,py end
+    end
     if mode == 5 then animationView.update(dt) end
     local map = activeMap()
     if map then
@@ -437,6 +460,10 @@ function love.draw()
         colliderView.draw(item, {x=x, y=y, w=pw, h=ph, put=put, background=background, small=small})
     elseif mode == 13 then
         filterView.draw(item, {x=x, y=y, w=pw, h=ph, put=put, background=background, small=small})
+    elseif mode == 14 and item then
+        local camera = drawMap(item,x,y,pw,ph,true)
+        playtest.draw({x=x,y=y,w=pw,h=ph},camera,
+            {put=put,small=small,imageFor=imageFor,spriteQuad=spriteQuad})
     else
         local message = (mode == 1 or mode == 3) and "Sem dados preparados. Execute tools/preparar_recursos.py." or "Nenhum recurso encontrado. Extraia o APK para assets_original."
         put(message, x + 18, y + 40)
@@ -444,7 +471,17 @@ function love.draw()
 end
 
 function love.keypressed(key)
-    -- F13 não existe em muitos teclados; atalho alternativo.
+    if key == 'p' and love.keyboard.isDown('lctrl','rctrl') then setMode(14); return end
+    if mode == 14 then
+        if key == 'r' then
+            local ok=playtest.start(selectedItem(),playtest.findHero(animations),atlases)
+            if not ok then status=playtest.state().error or 'Erro físico' end
+            return
+        elseif key == 'c' then playtest.toggleDebug();return
+        elseif key:match('^[1-5]$') then playtest.setVariant(tonumber(key)-1);return
+        elseif key == 'up' or key == 'down' or key == 'left' or key == 'right' then return end
+    end
+    -- A maioria dos teclados não possui F13; Ctrl+F12 abre a aba 13.
     if key == "f12" and love.keyboard.isDown("lctrl", "rctrl") then setMode(13); return end
     local n = tonumber(key:match("^f(%d+)$"))
     if n and n >= 1 and n <= #modes then setMode(n); return end
@@ -506,7 +543,7 @@ function love.textinput(text)
     if mode == 3 and (text == "[" or text == "]") then return end
     if mode == 5 and (text:lower() == "i" or text:lower() == "b" or text:lower() == "p") then return end
     if mode == 6 and (text:lower() == "g" or text:lower() == "v" or text:lower() == "t") then return end
-    if mode == 9 or mode == 10 or mode == 13 then return end
+    if mode == 9 or mode == 10 or mode == 13 or mode == 14 then return end
     if mode ~= 1 and #search < 80 and text:match("%g") then search = search .. text; selected = 1; resetImage(); if mode == 5 then animationView.reset() end; if mode == 6 then sceneView.reset() end end
 end
 
@@ -516,7 +553,7 @@ end
 
 function love.mousepressed(x, y, button)
     if button ~= 1 then return end
-    -- Clique no cabeçalho permite navegar inclusive à aba F13.
+    -- Todas as abas são acessíveis por clique no cabeçalho, inclusive F13.
     if y >= 49 and y < 80 and x >= 14 then
         local w = love.graphics.getDimensions()
         local i = math.floor((x - 14) / ((w - 28) / #modes)) + 1
@@ -551,6 +588,10 @@ function love.mousepressed(x, y, button)
         resetImage()
         if mode == 5 then animationView.reset() end
         if mode == 6 then sceneView.reset() end
+        if mode == 14 then
+            local ok=playtest.start(selectedItem(),playtest.findHero(animations),atlases)
+            if not ok then status=playtest.state().error or 'Erro físico' end
+        end
         local map = activeMap()
         if map then position.x, position.y = map.width * map.tilewidth / 2, map.height * map.tileheight / 2 end
     end
