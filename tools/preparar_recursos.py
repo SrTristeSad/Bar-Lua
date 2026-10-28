@@ -117,6 +117,46 @@ def parse_tileset(node: ET.Element, base_dir: Path, root: Path) -> dict:
     }
 
 
+def parse_object_groups(xml: ET.Element) -> list[dict]:
+    """Preserva objetos Tiled sem inferir colisão, dano ou comportamento.
+
+    Nesta versão do APK, cinco TMX possuem somente retângulos simples.
+    Outras formas permanecem no catálogo, mas não são transformadas em fixtures.
+    """
+    groups = []
+    for node in xml.findall("objectgroup"):
+        objects = []
+        for obj in node.findall("object"):
+            x = float(obj.get("x", "0"))
+            y = float(obj.get("y", "0"))
+            width = float(obj.get("width", "0"))
+            height = float(obj.get("height", "0"))
+            shape = "rectangle"
+            if obj.find("ellipse") is not None:
+                shape = "ellipse"
+            elif obj.find("polygon") is not None:
+                shape = "polygon"
+            elif obj.find("polyline") is not None:
+                shape = "polyline"
+            elif obj.find("point") is not None:
+                shape = "point"
+            props = {}
+            for prop in obj.findall("./properties/property"):
+                key = prop.get("name", "")
+                if key:
+                    props[key] = prop.get("value", prop.text or "")
+            objects.append({
+                "id": int(obj.get("id", "0")), "name": obj.get("name", ""),
+                "type": obj.get("type", ""), "shape": shape,
+                "x": x, "y": y, "width": width, "height": height,
+                "rotation": float(obj.get("rotation", "0")),
+                "visible": obj.get("visible", "1") != "0", "properties": props,
+            })
+        groups.append({"id": int(node.get("id", "0")),
+                       "name": node.get("name", ""), "objects": objects})
+    return groups
+
+
 def parse_map(path: Path, root: Path) -> dict:
     xml = ET.parse(path).getroot()
     if xml.attrib.get("orientation") != "orthogonal":
@@ -129,7 +169,7 @@ def parse_map(path: Path, root: Path) -> dict:
         "tilewidth": int(xml.attrib["tilewidth"]),
         "tileheight": int(xml.attrib["tileheight"]),
         "tilesets": [parse_tileset(ts, path.parent, root) for ts in xml.findall("tileset")],
-        "layers": [],
+        "layers": [], "objectgroups": parse_object_groups(xml),
     }
     for layer in xml.findall("layer"):
         data = layer.find("data")
