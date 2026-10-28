@@ -151,7 +151,7 @@ local function drawShell(w, h, list)
         put(label, 13, y, i == selected and {1, 1, 1} or {0.74, 0.80, 0.84}, small)
     end
     background(0, h - BOTTOM, w, BOTTOM, {0.12, 0.16, 0.20})
-    put("↑↓: selecionar  •  [ ]: sprite  •  Ctrl+F12: filtros  •  Ctrl+P: teste  •  Esc: limpar", 13, h - BOTTOM + 7, {0.85, 0.90, 0.96}, small)
+    put("↑↓: selecionar  •  [ ]: sprite  •  Ctrl+F12: filtros  •  Ctrl+P: teste  •  J/K/L: ataques (prévia)  •  Esc: limpar", 13, h - BOTTOM + 7, {0.85, 0.90, 0.96}, small)
     put(status, 13, h - BOTTOM + 29, {0.72, 0.80, 0.87}, small)
 end
 
@@ -478,7 +478,10 @@ function love.keypressed(key)
             if not ok then status=playtest.state().error or 'Erro físico' end
             return
         elseif key == 'o' then playtest.toggleMapObjects();return
-        elseif key == 'k' then playtest.toggleMapCollision();return
+        elseif key == 'g' then playtest.toggleMapCollision();return
+        elseif key == 'j' then playtest.triggerAttack(1);return
+        elseif key == 'k' then playtest.triggerAttack(2);return
+        elseif key == 'l' then playtest.triggerAttack(3);return
         elseif key == 'c' then playtest.toggleDebug();return
         elseif key:match('^[1-5]$') then playtest.setVariant(tonumber(key)-1);return
         elseif key == 'up' or key == 'down' or key == 'left' or key == 'right' then return end
