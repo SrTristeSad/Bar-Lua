@@ -2,6 +2,37 @@
 
 **Objetivo:** estudar um APK original do BarbarQ e reproduzir sua experiência no PC com **Lua e LÖVE2D**, sem emulador Android. Isto **não** é um jogo inspirado no BarbarQ. Os recursos recuperados servem de referência, mas portar a lógica original exige engenharia reversa adicional.
 
+## Fase 19 — objetos de mapa TMX com física experimental (NÃO partida original)
+
+**Inventário verificado no APK 1.0.1811:** 32 arquivos `.tmx`; apenas os cinco
+`petisland_01` a `petisland_05` possuem `objectgroup`. Cada um descreve um
+retângulo no espaço do mapa em **(x=395, y=138, largura=232, altura=238)**.
+As referências são dados Tiled: nenhum atributo do objeto o classifica como
+parede, terreno sólido ou zona de dano. Os arquivos `.tsx` associados não contêm
+colisores individuais de tiles. **Não afirmamos que estes sejam obstáculos do
+jogo original.**
+
+- `tools/preparar_recursos.py` preserva hierarquias de objetos, identificadores,
+  nomes, formatos, coordenadas, visibilidade e propriedades declaradas no TMX.
+- `src/map_objects.lua` separa retângulos válidos e verifica sobreposição
+  em coordenadas da cena. Formas não retangulares não são convertidas em física.
+- Em **Ctrl+P**, a tecla **O** alterna a sobreposição visual dos objetos TMX,
+  sem modificar o mapa. **K** alterna um **teste físico opcional**, construído
+  com fixtures Box2D: começa como sensor (não sólido) e só se torna sólido
+  quando o bárbaro estiver fora do retângulo, evitando ativação dentro de um
+  obstáculo. O modo de colisão é desativado ao reiniciar a cena.
+- `C` continua controlando o debug físico existente. O retângulo laranja é
+  o obstáculo **artificial** da Fase 18 e permanece identificado como tal.
+- Validação: `python -m pytest -q tests` — 64 testes, 10 subtestes
+  adicionais, sem falhas. Reprocessamos os 32 TMX com os recursos originais.
+
+**Limites:** a forma de usar os cinco retângulos no motor nativo continua
+indeterminada; o tratamento da colisão física no LÖVE2D é uma experiência de
+isolamento. A cena não é uma partida jogável e não houve teste gráfico do
+executável em Windows.
+
+---
+
 ## Fase 18 — primeira cena controlável (laboratório físico, NÃO partida original)
 
 A aba **Teste** (atalho **Ctrl+P**) acrescenta uma cena **controlável** em
