@@ -1,0 +1,100 @@
+{
+  "phase": 20,
+  "apk_version": "1.0.1811",
+  "library_sha256": "8199604d199b57ebe329725c9a624b85517f495f78c1dad745449684750e4677",
+  "animation_path": "character/babarian/babarian.bexportjson",
+  "animation_sha256": "35da4784af980219487f41af93cb5de3b85ad55c69e13d7085118b26bb54183b",
+  "functions": {
+    "Hero::onButtonClicked(config::skill::ButtonType)": {
+      "address": "0xe57918",
+      "size_bytes": 104,
+      "instructions": 26,
+      "checks": [
+        "adds_skill_to_entity",
+        "configuration_read",
+        "configuration_required",
+        "creates_configured_skill",
+        "range_guard"
+      ]
+    },
+    "Hero::getButtonState(int) const": {
+      "address": "0xe5b264",
+      "size_bytes": 36,
+      "instructions": 9,
+      "checks": [
+        "nonzero_state",
+        "range_guard",
+        "state_byte_read"
+      ]
+    }
+  },
+  "attack_movements": {
+    "attack1": [
+      {
+        "name": "attack1_0",
+        "duration_frames": 61
+      },
+      {
+        "name": "attack1_1",
+        "duration_frames": 61
+      },
+      {
+        "name": "attack1_2",
+        "duration_frames": 61
+      },
+      {
+        "name": "attack1_3",
+        "duration_frames": 61
+      },
+      {
+        "name": "attack1_4",
+        "duration_frames": 61
+      }
+    ],
+    "attack2": [
+      {
+        "name": "attack2_0",
+        "duration_frames": 61
+      },
+      {
+        "name": "attack2_1",
+        "duration_frames": 61
+      },
+      {
+        "name": "attack2_2",
+        "duration_frames": 61
+      },
+      {
+        "name": "attack2_3",
+        "duration_frames": 61
+      },
+      {
+        "name": "attack2_4",
+        "duration_frames": 61
+      }
+    ],
+    "attack3": [
+      {
+        "name": "attack3_0",
+        "duration_frames": 61
+      },
+      {
+        "name": "attack3_1",
+        "duration_frames": 61
+      },
+      {
+        "name": "attack3_2",
+        "duration_frames": 62
+      },
+      {
+        "name": "attack3_3",
+        "duration_frames": 61
+      },
+      {
+        "name": "attack3_4",
+        "duration_frames": 61
+      }
+    ]
+  },
+  "limits": "Ataques são nomes de movimentos. Não foi comprovado vínculo com IDs de habilidades, duração em segundos, dano, hitbox nem cooldown."
+}
