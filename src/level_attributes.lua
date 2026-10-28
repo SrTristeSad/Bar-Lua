@@ -1,5 +1,5 @@
 -- F29: leitura apenas dos slots numericos de HeroConfig recuperados do APK.
--- F30 identificou 0x44 como HP inicial; os demais campos nao tem nome confirmado.
+-- F30 identificou 0x44 como HP inicial; F31 identificou 0x48 como velocidade-base.
 local M={}
 M.slots={'0x38','0x3c','0x40','0x44','0x48','0x4c','0x50','0x54'}
 local function level(group,number)

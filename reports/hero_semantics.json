@@ -1,0 +1,129 @@
+{
+  "phase": 31,
+  "apk_version": "1.0.1811",
+  "library_sha256": "8199604d199b57ebe329725c9a624b85517f495f78c1dad745449684750e4677",
+  "config_sha256": "33402fa701f4fd425779868cd805c11e9ae88cce74bf298331715035aff6d3a5",
+  "verified_function_count": 6,
+  "verified_instruction_count": 648,
+  "additional_checks": 8,
+  "functions": [
+    {
+      "name": "HeroConfig::load",
+      "address": "0x1517b1c",
+      "bytes": 636,
+      "instructions": 159
+    },
+    {
+      "name": "Hero::init",
+      "address": "0xe56734",
+      "bytes": 700,
+      "instructions": 175
+    },
+    {
+      "name": "Hero::addHurtFromEnemy",
+      "address": "0xe57678",
+      "bytes": 356,
+      "instructions": 89
+    },
+    {
+      "name": "Hero::getValueByType",
+      "address": "0xe58af8",
+      "bytes": 652,
+      "instructions": 163
+    },
+    {
+      "name": "Hero::move_update(float)",
+      "address": "0xe585a8",
+      "instructions": 60,
+      "checks": 6
+    },
+    {
+      "name": "Hero::setSpeed(int)",
+      "address": "0xe59844",
+      "instructions": 2,
+      "checks": 2
+    }
+  ],
+  "config_slots": [
+    {
+      "config_offset": "0x38",
+      "hero_offsets": [
+        "0xc0"
+      ],
+      "meaning": "nao identificado",
+      "confirmed": false
+    },
+    {
+      "config_offset": "0x3c",
+      "hero_offsets": [
+        "0x32c"
+      ],
+      "meaning": "nao identificado",
+      "confirmed": false
+    },
+    {
+      "config_offset": "0x40",
+      "hero_offsets": [
+        "0x330"
+      ],
+      "meaning": "nao identificado",
+      "confirmed": false
+    },
+    {
+      "config_offset": "0x44",
+      "hero_offsets": [
+        "0x314",
+        "0x310"
+      ],
+      "meaning": "HP inicial",
+      "confirmed": true
+    },
+    {
+      "config_offset": "0x48",
+      "hero_offsets": [
+        "0x328",
+        "0xe0"
+      ],
+      "meaning": "velocidade-base",
+      "confirmed": true
+    },
+    {
+      "config_offset": "0x4c",
+      "hero_offsets": [
+        "0x31c",
+        "0x318"
+      ],
+      "meaning": "nao identificado",
+      "confirmed": false
+    },
+    {
+      "config_offset": "0x50",
+      "hero_offsets": [
+        "0x1b8"
+      ],
+      "meaning": "nao identificado",
+      "confirmed": false
+    },
+    {
+      "config_offset": "0x54",
+      "hero_offsets": [
+        "0x184"
+      ],
+      "meaning": "nao identificado",
+      "confirmed": false
+    }
+  ],
+  "confirmed_hp_slot": "0x44",
+  "confirmed_speed_slot": "0x48",
+  "speed_hero_offset": "0x328",
+  "speed_value_type": 19,
+  "speed_divisor": 100.0,
+  "barbarian_level1_raw_speed": 150,
+  "barbarian_level1_movement_component": 1.5,
+  "limitations": [
+    "Movimento usa velocidade+0x328 apenas quando estado interno permite; soma componente secundario+0xd8 e direcoes.",
+    "A unidade exata, tempo de integracao e sincronismo de rede nao estao reconstruidos.",
+    "Nao inferir ataque ou defesa a partir dos demais seis slots.",
+    "Mapeamento vale apenas para BarbarQ ARM64 1.0.1811."
+  ]
+}

@@ -37,6 +37,7 @@ local reinitReport = {}
 local heroLevelCatalog = {groups={}}
 local heroAttrReport = {}
 local heroSchemaReport = {}
+local heroSemanticReport = {}
 local imageIndex = {}
 local textures, quads = {}, {}
 local position = {x = 0, y = 0}
@@ -398,6 +399,7 @@ function love.load()
     heroLevelCatalog = readLua("cache/hero_levels.lua")
     heroAttrReport = readLua("reports/hero_attr_arm64.lua")
     heroSchemaReport = readLua("reports/hero_schema.lua")
+    heroSemanticReport = readLua("reports/hero_semantics.lua")
     for _, map in ipairs(maps) do lists[1][#lists[1]+1] = map end
     scan("assets_original", {png = true, jpg = true, jpeg = true}, lists[2])
     for _, atlas in ipairs(atlases) do lists[3][#lists[3]+1] = atlas end
@@ -502,7 +504,7 @@ function love.draw()
     elseif mode == 15 then
         skillView.draw(item,{x=x,y=y,w=pw,h=ph,put=put,background=background,small=small},skillCatalog.tables,skillTrace)
     elseif mode == 22 then
-        levelAttributesView.draw(item,heroAttrReport,{x=x,y=y,w=pw,h=ph,put=put,background=background,small=small},heroSchemaReport)
+        levelAttributesView.draw(item,heroAttrReport,{x=x,y=y,w=pw,h=ph,put=put,background=background,small=small},heroSchemaReport,heroSemanticReport)
     elseif mode == 21 then
         reinitView.draw(reinitReport,{x=x,y=y,w=pw,h=ph,put=put,background=background,small=small})
     elseif mode == 20 then

@@ -662,3 +662,42 @@ depois execute `python tools/analisar_esquema_heroi.py` e
 O APK, o `.so` e os recursos extraídos **não são publicados no GitHub**.
 A cena Ctrl+P continua experimental, sem dano, morte ou renascimento
 funcional, e não houve validação gráfica manual no Windows/LÖVE2D.
+
+
+## Fase 31 — Velocidade-base confirmada em `HeroConfig`
+
+Esta etapa acrescenta um segundo atributo semanticamente comprovado pelo
+executável ARM64 original, sem modificar o playtest ou converter resultados
+em uma velocidade de tela não validada.
+
+- `HeroConfig+0x48` alimenta `Hero+0x328` em `Hero::init`; o mesmo valor é
+  copiado para `Hero+0xe0`, cuja semântica permanece em estudo.
+- `Hero::setSpeed(int)` grava `Hero+0x328`, confirmando o campo de
+  **velocidade-base**.
+- `Hero::move_update(float)` lê esse campo quando o respectivo estado interno
+  permite e o divide por **100** antes de calcular a componente de movimento.
+  O movimento também usa `Hero+0xd8`, `Hero+0xdc`, direção e estados internos.
+- `Hero::getValueByType` expõe o valor por **ValueType 19**; HP atual e
+  referência continuam correspondendo aos códigos 5 e 11.
+- O valor do campo `0x48` do bárbaro no nível 1 é **150**. Após o divisor
+  resulta em componente **1,5**, sem implicar pixels por segundo ou
+  velocidade total; a escala e a temporização ainda não foram reconstruídas.
+
+A cadeia é auditável em `tools/analisar_semantica_heroi.py`, com conferência
+de SHA-256, símbolos, 648 instruções ARM64 (incluindo as 586 já verificadas na
+Fase 30), *checkpoints* de opcodes e o divisor extraído da seção PT_LOAD.
+O relatório público está em `reports/hero_semantics.json` e
+`reports/hero_semantics.lua`. O catálogo privado extraído do APK continua
+fora do repositório.
+
+A aba **Níveis** (`Ctrl+L`) indica agora `0x44: HP inicial` e
+`0x48: velocidade-base`. Pressione **T** nessa aba para ver os códigos
+ValueType. Os seis outros campos permanecem anônimos, e **nenhum atributo é
+aplicado à cena controlável**.
+
+**Limites:** não há correspondência confiável de `0x38`, `0x3c`, `0x40`,
+`0x4c`, `0x50` e `0x54` com ataque, defesa e outras estatísticas. O
+visualizador continua experimental e não houve validação gráfica em um
+Windows real.
+
+**Validação F31:** 142 testes Python/Lua aprovados em 4 grupos; foi excluída uma auditoria antiga integral de 560 cenas CSB por duração excessiva. 100 arquivos Lua passaram na verificação sintática. A interface gráfica ainda não foi validada em Windows com LÖVE2D.

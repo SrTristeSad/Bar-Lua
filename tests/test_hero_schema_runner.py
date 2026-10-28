@@ -45,7 +45,7 @@ class HeroSchema(unittest.TestCase):
         s=(ROOT/'main.lua').read_text('utf8')
         self.assertIn('heroSchemaReport = readLua("reports/hero_schema.lua")',s)
         self.assertIn('levelAttributesView.draw(item,heroAttrReport',s)
-        self.assertIn('},heroSchemaReport)',s)
+        self.assertIn('},heroSchemaReport,heroSemanticReport)',s)
         self.assertIn('setMode(22)',s)
 
 if __name__=='__main__':unittest.main()
