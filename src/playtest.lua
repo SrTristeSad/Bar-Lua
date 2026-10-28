@@ -6,11 +6,14 @@ local codec = require('src.movement_codec')
 local pose = require('src.pose')
 local resolver = require('src.sprite_resolver')
 local geometry = require('src.sprite_geometry')
+local mapObjects = require('src.map_objects')
 local M = {}
 local state = {world = nil, body = nil, map = nil, hero = nil, lookup = nil,
                running = false, directions = 0, time = 0, cameraX = 0, cameraY = 0,
                collisionDebug = true, ready = false, steps = 0, lastContacts = 0,
-               contactCount = 0, textureMisses = 0, error = nil}
+               contactCount = 0, textureMisses = 0, error = nil,
+               mapObjectFixtures = {}, mapObjectRects = {}, mapCollision = false,
+               showMapObjects = true, mapObjectMessage = nil}
 local ACCUMULATOR_LIMIT, STEP = 0.12, 1/60
 local SPEED_CENTI, PIXELS_PER_METER, RADIUS = 300, 30, 18
 local function validMap(map)
@@ -46,6 +49,9 @@ function M.reset()
     state.ready = false; state.running = false; state.time = 0
     state.steps = 0; state.accum = 0; state.lastContacts = 0
     state.contactCount = 0; state.error = nil; state.textureMisses = 0
+    state.mapObjectFixtures = {}; state.mapObjectRects = {}
+    state.mapCollision = false; state.showMapObjects = true
+    state.mapObjectMessage = nil
 end
 local function staticBox(world,x,y,w,h)
     local body = love.physics.newBody(world,x,y,'static')
@@ -59,6 +65,7 @@ function M.start(map, hero, atlases)
     if not love.physics then state.error = 'LÖVE2D sem módulo love.physics'; return false end
     if not hero then state.error = 'Animação original babarian ausente'; return false end
     state.map, state.hero = map, hero
+    state.mapObjectRects = mapObjects.rectangles(map)
     state.lookup = resolver.index(atlases)
     state.cameraX, state.cameraY = map.width*map.tilewidth/2, map.height*map.tileheight/2
     local ok, err = pcall(function()
@@ -82,6 +89,15 @@ function M.start(map, hero, atlases)
             staticBox(state.world,w/2,h+t/2,w,t)
             staticBox(state.world,-t/2,h/2,t,h)
             staticBox(state.world,w+t/2,h/2,t,h)
+        end
+        -- Objetos TMX recuperados sao apenas SENSORES de pesquisa por padrao.
+        -- Os arquivos nao dizem que sejam obstaculos jogaveis.
+        for _,rect in ipairs(state.mapObjectRects) do
+            local rb = love.physics.newBody(state.world,rect.x+rect.w/2,rect.y+rect.h/2,'static')
+            local rf = love.physics.newFixture(rb,love.physics.newRectangleShape(rect.w,rect.h),1)
+            rf:setFilterData(1,3,0)
+            rf:setSensor(true)
+            state.mapObjectFixtures[#state.mapObjectFixtures+1] = rf
         end
         -- Corpo de depuração deliberadamente ARTIFICIAL, não obstáculo do mapa original.
         if w>360 and h>260 then
@@ -124,6 +140,31 @@ function M.setVariant(number)
     if type(number)~='number' or number<0 or number>4 then return false end
     state.directions = math.floor(number)
     state.time = 0
+    return true
+end
+function M.toggleMapObjects()
+    state.showMapObjects = not state.showMapObjects
+    return state.showMapObjects
+end
+function M.toggleMapCollision()
+    if not state.ready or #state.mapObjectFixtures == 0 then
+        state.mapObjectMessage = 'Este mapa nao contem retangulos TMX testaveis'
+        return false
+    end
+    if not state.mapCollision then
+        local x,y = state.body:getPosition()
+        for _,rect in ipairs(state.mapObjectRects) do
+            if mapObjects.overlaps(rect,x,y,RADIUS) then
+                state.mapObjectMessage = 'Saia do retangulo TMX antes de ativar a colisao de teste'
+                return false
+            end
+        end
+    end
+    state.mapCollision = not state.mapCollision
+    for _,f in ipairs(state.mapObjectFixtures) do f:setSensor(not state.mapCollision) end
+    state.mapObjectMessage = state.mapCollision and
+        'Fisica experimental ON (NAO confirma obstaculo original)' or
+        'Objetos TMX sem colisao (sensor)'
     return true
 end
 function M.toggleDebug() state.collisionDebug = not state.collisionDebug end
@@ -169,6 +210,16 @@ function M.draw(panel, camera, context)
         end
     end
     state.textureMisses=unresolved
+    if state.showMapObjects then
+        for _,rect in ipairs(state.mapObjectRects) do
+            love.graphics.setColor(state.mapCollision and 1 or 0.25,
+                state.mapCollision and 0.65 or 0.80, 1, 0.75)
+            love.graphics.rectangle('line',
+                panel.x+(rect.x-camera.left)*camera.scale,
+                panel.y+(rect.y-camera.top)*camera.scale,
+                rect.w*camera.scale,rect.h*camera.scale)
+        end
+    end
     if state.collisionDebug then
         love.graphics.setColor(0.17,1,0.62,0.86)
         love.graphics.setLineWidth(2)
@@ -187,9 +238,13 @@ function M.draw(panel, camera, context)
         panel.x+10,panel.y+38,{1,0.87,0.44},context.small)
     put(string.format('Posição (px): %.1f, %.1f | corpos de teste | contatos: %d',centerX,centerY,state.contactCount),
         panel.x+10,panel.y+60,{1,1,1},context.small)
-    put('WASD/setas: andar • R: reiniciar • 1–5: variante animada • C: colisores',
+    put('WASD: andar | O: objetos TMX | K: colisao TESTE | C: debug | R: reiniciar',
         panel.x+10,panel.y+panel.h-50,{1,1,1},context.small)
     put(string.format('Pose original: %d partes visíveis, %d não resolvidas; geometria e 30 fps PROVISÓRIOS',
         drawn,unresolved),panel.x+10,panel.y+panel.h-27,{1,0.77,0.45},context.small)
+    put(string.format('Objetos TMX: %d | teste fisico: %s | %s',
+        #state.mapObjectRects,state.mapCollision and 'ativo' or 'inativo',
+        state.mapObjectMessage or 'sem semantica de colisao confirmada'),
+        panel.x+10,panel.y+82,{0.69,0.91,1},context.small)
 end
 return M
