@@ -1,0 +1,47 @@
+package.path='./?.lua;./?/init.lua;'..package.path
+local schema=require('src.hero_schema')
+local view=require('src.level_attributes_view')
+local native=dofile('reports/hero_schema.lua')
+local evidence=dofile('reports/hero_combat_fields.lua')
+local catalog=dofile('cache/hero_levels.lua')
+assert(evidence.phase==32 and evidence.verified_instruction_count==1010)
+assert(evidence.extra_checks==18)
+assert(schema.validatedCombatTypes(native,evidence))
+assert(schema.valueType(native,2).offset=='0x32c')
+assert(schema.valueType(native,3).offset=='0x330')
+assert(schema.slotLabel('0x3c')=='dano-base')
+assert(schema.slotLabel('0x40')=='alcance de dano (parametro)')
+assert(schema.slotLabel('0x38')=='atributo nao identificado')
+assert(not schema.validatedCombatTypes(native,{}))
+assert(not schema.validatedCombatTypes(native,{phase=32,damage={},damage_scope={}}))
+local forged={phase=32,damage={slot='0x3c',offset='0x32c',value_type=2,setter='Hero::setDamage(int)'},damage_scope={slot='0x40',offset='0x330',value_type=3,setter='Hero::setDamageScope(int)'}}
+assert(schema.validatedCombatTypes(native,forged))
+forged.damage_scope.offset='0x314'
+assert(not schema.validatedCombatTypes(native,forged))
+local group
+for _,g in ipairs(catalog.groups) do if g.base_id==210001 then group=g;break end end
+assert(group and #group.levels>=3)
+assert(schema.configDamage(group.levels[1])==59)
+assert(schema.configDamageScope(group.levels[1])==76)
+assert(schema.configDamageScope(group.levels[2])==79)
+assert(schema.configDamageScope(group.levels[3])==82)
+assert(schema.configDamage({values={['0x3c']=-1}})==nil)
+assert(schema.configDamageScope({values={['0x40']=1.5}})==nil)
+assert(schema.configDamage(nil)==nil)
+local buffer={}
+local panel={x=0,y=0,w=1000,h=700,small='stub',background=function()end,put=function(v)buffer[#buffer+1]=tostring(v)end}
+view.keypressed('r')
+view.draw(group,{total_instructions=696},panel,native,dofile('reports/hero_semantics.lua'))
+local contents=table.concat(buffer,'\n')
+assert(contents:find('Dano-base: 59',1,true))
+assert(contents:find('alcance bruto: 76',1,true))
+assert(contents:find('Alcance sem unidade confirmada',1,true))
+assert(contents:find('Quatro slots',1,true))
+view.keypressed('t')
+buffer={}
+view.draw(group,{},panel,native,dofile('reports/hero_semantics.lua'))
+contents=table.concat(buffer,'\n')
+assert(contents:find('dano-base',1,true))
+assert(contents:find('alcance dano',1,true))
+view.keypressed('r')
+print('F32 COMBAT FIELDS LUA OK')

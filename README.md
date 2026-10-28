@@ -701,3 +701,263 @@ visualizador continua experimental e não houve validação gráfica em um
 Windows real.
 
 **Validação F31:** 142 testes Python/Lua aprovados em 4 grupos; foi excluída uma auditoria antiga integral de 560 cenas CSB por duração excessiva. 100 arquivos Lua passaram na verificação sintática. A interface gráfica ainda não foi validada em Windows com LÖVE2D.
+
+---
+
+## Fase 32 — Semântica dos campos de dano e escopo (BarbarQ ARM64 1.0.1811)
+
+A Fase 32 acrescenta `tools/analisar_campos_combate.py`, que cruza a biblioteca ARM64 original com a tabela `config.hero.heroconfig.txt`, validando o SHA-256 da biblioteca e da configuração. A rotina verifica **as instruções originais, seus endereços e os nomes das funções**, sem inferir atributos a partir apenas da magnitude de valores.
+
+| HeroConfig | Hero | Rotina que atribui o valor | `ValueType` | Interpretação comprovada |
+|---|---|---|---|---|
+| `0x3c` | `0x32c` | `Hero::setDamage(int)` | `2` | Dano-base (parâmetro do herói) |
+| `0x40` | `0x330` | `Hero::setDamageScope(int)` | `3` | Parâmetro de escopo/alcance do dano |
+| `0x44` | `0x314` e `0x310` | inicialização / HP | `5` e `11` | HP atual e referência |
+| `0x48` | `0x328` | `Hero::setSpeed(int)` | `19` | Velocidade-base |
+
+A auditoria também valida a **cópia inicial** em `Hero::init`, o **ajuste incremental** em `Hero::reInit` e as **leituras** em `Hero::getValueByType`: são 1.010 instruções auditadas no conjunto F30–F32 e 18 verificações adicionais desta fase. Para o bárbaro, os dados originais nos níveis 1–3 são: dano-base `59, 59, 59`; escopo/alcance de dano `76, 79, 82`. A Fase 31 continua com seu relatório próprio e independente.
+
+**Limites da evidência:** o nome `setDamage` não prova uma fórmula final de dano; `setDamageScope` não informa unidade, raio efetivo, formato da hitbox, efeitos de equipamentos ou alcance em pixels. **Não foi identificado campo de defesa.** Nenhum desses parâmetros foi aplicado à cena controlável nem foi implementado combate novo.
+
+### Arquivos novos/alterados
+
+- `tools/analisar_campos_combate.py`: auditoria verificável por versão, SHA, símbolos, endereços e instruções ARM64.
+- `reports/hero_combat_fields.json` e `.lua`: evidências estáticas, sem copiar a tabela proprietária de configuração para o repositório público.
+- `src/hero_schema.lua`: consultas numéricas de dano e escopo com validações e rejeição de dados malformados.
+- `src/level_attributes_view.lua`: rótulos de dano e escopo na aba **Níveis (`Ctrl+L`)**, `ValueType` 2/3 na tela `T` e alerta explícito sobre unidade desconhecida.
+- `tests/test_combat_fields.py` e `.lua`: validação do ELF original, regressão, casos inválidos e interface.
+
+### Validação e distribuição
+
+Execute `python -m unittest discover -s tests -p 'test_combat_fields.py' -v` no diretório do projeto. A auditoria nativa depende da `libcocos2dcpp.so` da **mesma versão 1.0.1811** extraída do APK fornecido; ela não está distribuída no repositório público. O aplicativo continua sendo **uma bancada de investigação com uma cena de movimento experimental**. O executável gráfico do Windows ainda não foi validado; os testes automatizados não substituem essa verificação.
+
+---
+
+## Fase 33 — Alcance-base, ValueType 3 e região AABB da seleção em setor
+
+**Versão analisada:** BarbarQ 1.0.1811 ARM64. O analisador
+`tools/analisar_escopo_setor.py` valida os SHA-256 da biblioteca ELF e da
+configuração `config.skill.selectsector.txt`, bem como seis símbolos nativos,
+**615 instruções ARM64 e 27 verificações de instruções** em seus endereços.
+
+### Cadeia comprovada
+
+1. `HeroConfig+0x40` é armazenado em `Hero+0x330` e exposto via
+   `Hero::getValueByType(ValueType 3)`, conforme relatórios F30–F32.
+2. `config::skill::SelectSector::load` cria `CircleParameters` no offset
+   `+0x48`, contendo o código ValueType no offset `+0x8` e um fator inteiro
+   no offset `+0xc`. O construtor `CSelectTargetSector` conserva esse ponteiro.
+3. `CSelectTargetSector::GetSelectTargets` passa **esse código e o fator** a
+   `Entity::getValueByType`, que encaminha a leitura virtual ao herói.
+   O ramo correspondente de `Hero::getValueByType` calcula
+   `(fator/100) * Hero+0x330`, antes de uma eventual operação adicional.
+4. O resultado é utilizado como **raio da caixa de busca inicial** ao chamar
+   `b2World::QueryAABB`. Tanto as coordenadas do centro quanto o raio são
+   divididos pela constante `100.0`, localizada no ELF original.
+5. Após a consulta Box2D há uma chamada virtual adicional de filtragem.
+   **Não** se deve confundir esse AABB com o acerto final do golpe.
+
+A configuração original contém **84 seletores em setor**, dos quais
+**18 utilizam ValueType 3**. Desses 18, **17 não trazem objeto de operação
+adicional** e podem usar o modelo aritmético isolado, sem o efeito de uma
+operação extra. O setor `10052` emprega o fator 100. Para o bárbaro nível 1,
+cujo alcance bruto é 76, essa leitura retorna **76 unidades brutas**.
+No quadro de *demonstração*, com centro hipotético (200, 150) e deslocamento
+zero, o QueryAABB geraria os limites `(1,24; 0,74)` até `(2,76; 2,26)` após
+a divisão por 100. **Esse exemplo não valida hitboxes nem posições na cena.**
+
+### Arquivos desta etapa
+
+- `tools/analisar_escopo_setor.py`: verificação de binário, endereços,
+  decodificação de seletor por configuração e relatórios sem recursos privados.
+- `reports/sector_scope.json` e `.lua`: ligações e contagens auditáveis.
+- `src/sector_scope.lua`: cálculo isolado de fator e AABB, com validação de
+  entradas e bloqueio de valores que exigem operações desconhecidas.
+- `src/sector_scope_view.lua`: aba **Escopo (Ctrl+E)**, com demonstração de
+  AABB e ajuste hipotético de alcance por **←/→**, direção por **↑/↓** e
+  reinicialização por **R**. Não altera a cena controlável.
+- `tests/test_sector_scope.py` e `tests/test_sector_scope.lua`:
+  SHA-256, símbolos, 615 instruções, casos de erro, contas e interface.
+
+**Limites:** não foi demonstrado um vínculo entre o seletor `10052` e a
+habilidade `4010020`, nem foi reproduzido o filtro final dos alvos, seu
+formato angular, dano, equipes ou tempo do ataque. O visualizador continua
+experimental e ainda não foi executado graficamente em Windows real.
+
+**Próximo passo:** inspecionar a callback AABB concreta e o método de
+filtragem do seletor de setor para descobrir as regras que eliminam candidatos
+após a busca inicial, sem inventar os acertos do ataque básico.
+
+---
+
+## Fase 34 — Filtragem de candidatos após QueryAABB
+
+**Alvo da auditoria:** `libcocos2dcpp.so` ARM64 do BarbarQ 1.0.1811. A
+ferramenta `tools/analisar_filtro_setor.py` confere o SHA-256 original, quatro
+funções e os símbolos exatos, **396 instruções ARM64**, **45 instruções
+sentinela**, três relocações da vtable de `Entity` e a constante de tolerância
+angular de aproximadamente `0,0001`.
+
+### Fluxo confirmado pelo código nativo
+
+1. `CSelectTargetSector::GetSelectTargets` constrói uma caixa de consulta e
+   chama `b2World::QueryAABB` (etapa já estudada na Fase 33).
+2. `CSectorQueryCallback::ReportFixture` obtém a entidade do `userData`
+   associado ao corpo do fixture. Se não existir entidade, rejeita. Em seguida,
+   verifica a intersecção bit a bit entre a máscara da entidade (`+0x20`) e a
+   máscara do callback (`+0x28`). Uma intersecção nula rejeita o candidato.
+   Esse teste **não é** o `b2ContactFilter::ShouldCollide` de contato físico:
+   ele pertence ao seletor de habilidades.
+3. Com a máscara aceita, consulta o tipo de forma da entidade (`+0x1A8`):
+   - **1 — círculo:** verifica se a distância ao centro é estritamente menor
+     que `raio da consulta + Entity::getPhysicalRadius()`.
+   - **2 — retângulo:** verifica cada eixo contra `raio da consulta +
+     Entity::getPhysicalRectA()/2` ou `...RectB()/2`.
+   - **3 — inserção direta:** adiciona a entidade à lista sem realizar os
+     testes geométricos/angulares do setor (mas somente depois da máscara).
+   - Outros valores não são adicionados.
+4. Para tipos 1 e 2, a rotina rejeita o vetor extremamente pequeno e compara
+   o ângulo em graus entre o deslocamento e a direção do setor com a **metade
+   truncada** da abertura configurada. O limite é **estrito**: o candidato
+   precisa ter ângulo inferior à meia abertura.
+5. O método virtual posterior chama `CSelectTargetSector::Filter`, que percorre
+   IDs de condições da configuração, obtém cada `CCondition` de
+   `CConditionManager`, transmite a lista de candidatos, a entidade criadora e
+   a habilidade, e executa uma chamada virtual em `CCondition`. A execução
+   pode modificar/esvaziar a lista; por isso **passar em ReportFixture não
+   comprova ser alvo final**, nem implica dano aplicado.
+
+As três funções de dimensões físicas foram identificadas por relocações da
+vtable de `Entity`, não inferidas de nomes aproximados. O relatório guarda
+endereços e evidências, não as tabelas proprietárias ou bytes da biblioteca.
+
+### Implementação no Bar-Lua
+
+- `src/sector_filter.lua`: avaliador puro dos predicados conhecidos, com
+  máscara de bits, círculo, retângulo, tipo 3 e ângulo, sem dependência do
+  motor Box2D. A saída é **pré-seleção**, nunca alvo definitivo.
+- `src/sector_filter_view.lua`: nova aba **Alvos (`Ctrl+Q`)**, com seis
+  cenários hipotéticos e navegação por setas, reinicialização por **R**.
+- `tools/analisar_filtro_setor.py`: auditoria estática e geração dos relatórios
+  `reports/sector_filter.json` e `.lua`.
+- `tests/test_sector_filter.py` e `.lua`: regressões de borda, máscaras, tipos,
+  vetores inválidos, carregamento dos relatórios e integração do painel.
+
+**Limites explícitos:** o avaliador não reproduz as classes de condições,
+integração com o frame de habilidades, equipe, acerto ou HP. As dimensões
+físicas para cada entidade específica também ainda precisam ser recuperadas.
+Não existe confirmação de que a habilidade `4010020` utiliza um seletor
+específico da tabela. O jogo experimental continua sem combate funcional e
+sem validação gráfica em Windows real.
+
+**Comandos de validação:** `python tools/analisar_filtro_setor.py` (exige a
+biblioteca original colocada em `lib/arm64-v8a`) e
+`python -m unittest discover -s tests -p 'test_sector_filter.py' -v`.
+
+**Fase 35 planejada:** recuperar configurações das condições concretas
+referenciadas pelos seletores e seus efeitos sobre a lista final de alvos.
+
+---
+
+## Fase 35 — condições e composição da filtragem (somente bancada)
+
+O APK ARM64 original 1.0.1811 foi auditado para localizar a execução de condições
+após a pré-seleção de geometria da Fase 34. `tools/analisar_condicoes.py` valida o
+SHA-256 da biblioteca, os endereços e os tamanhos dos **cinco símbolos** estudados,
+com **233 instruções ARM64 e 37 verificações de opcode/operandos**. O analisador
+também valida os arquivos de configuração por comprimento de nome em **bytes
+UTF-8** e calcula seus hashes. As sete tabelas contêm **5.002 registros**:
+
+| Tabela `config.skill.*.txt` | Registros |
+|---|---:|
+| `conditionbuff` | 3.544 |
+| `conditioncamp` | 16 |
+| `conditionentitytype` | 12 |
+| `conditionpack` | 13 |
+| `conditionskillentitytype` | 4 |
+| `conditiontargetscount` | 7 |
+| `conditionvaluecompare` | 1.406 |
+
+### Comportamento verificado no ELF
+
+- **`CCondition::GetTargetResult`:** retorna verdadeiro para a lista vazia e
+  avalia o predicado virtual de todos os candidatos, interrompendo no primeiro
+  resultado falso.
+- **`CCondition::FilterTarget`:** remove um candidato reprovado mediante troca
+  com o último elemento da lista e encurtamento do vetor. Isso **pode alterar a
+  ordem dos candidatos**; não é um filtro estável que preserve a sequência.
+- **`CPackCondition::FilterTarget`:** percorre IDs internos em sequência, resolve
+  cada condição por `CConditionManager`, transmite o contexto e chama o método
+  virtual de filtragem, compartilhando a mesma lista de candidatos.
+- **`CTargetsCountCondition::FilterTarget`:** reduz a lista para uma quantidade
+  configurada; quando o modo aleatório está ativo e há redução positiva, utiliza
+  `RandNum::__NextInt` e trocas de posição antes do redimensionamento.
+- **`CSelectTargetSector::Filter`:** interrompe a cadeia externa quando a lista
+  de candidatos fica vazia, conforme a Fase 34.
+
+### Implementação isolada
+
+`src/condition_rules.lua` modela o resultado agregado, a remoção por troca, a
+composição por predicados **explicitamente hipotéticos** e o corte de quantidade
+**sem sorteio**. A escolha aleatória real é assinalada como **não recuperada**,
+sem inventar uma fonte de aleatoriedade. `src/condition_view.lua` inclui sete
+exemplos de demonstração, disponíveis na nova aba **Condições (`Ctrl+J`)**.
+
+Os relatórios públicos `reports/condition_flow.json/.lua` guardam hashes,
+contagens, endereços e evidências; o repositório público não contém as tabelas
+proprietárias do APK. O analisador não executa código da biblioteca.
+
+**Ainda não reproduzidos:** semântica das subclasses `CCampCondition`,
+`CBuffCondition`, `CCompareValueCondition` etc.; resolução completa de
+`ContainType`; estado de buffs/equipes; sequência original do gerador de
+números aleatórios; associação entre uma condição específica e o ataque básico
+`4010020`; efeitos de dano. A cena controlável continua experimental, não é
+uma partida funcional, e a execução gráfica em Windows real não foi validada.
+
+**Validação focal:** `python tools/analisar_condicoes.py` (com a biblioteca
+extraída do APK) e `python -m unittest tests.test_conditions_phase35 -v`.
+
+---
+
+## Fase 36 — predicados concretos de equipe, tipo e estado (bancada)
+
+A biblioteca `libcocos2dcpp.so` do BarbarQ 1.0.1811 foi examinada de forma
+estática. `tools/analisar_condicoes_concretas.py` valida seu SHA-256, símbolos,
+endereços, 31 instruções-chave e **duas tabelas de saltos** com oito entradas
+cada, dentro de **seis funções e 204 instruções ARM64**. Não executa código ARM64.
+
+### Regras recuperadas
+
+- **`CCampCondition`**: obtém as entidades por `CSkillEntity::GetEntity`,
+  compara o campo `Entity +0x17C`. O seletor 1 compara igualdade entre camp
+  do candidato e camp de referência; o seletor 2, desigualdade; seletores
+  3–8 testam os valores de camp `0–5` no candidato (ou na entidade criadora,
+  conforme o método). O `ContainType == 3` aceita o resultado do teste;
+  outros valores o invertem. Entidade ausente retorna falso.
+- **`CEntityKindTypeCondition`**: lê `Entity +0x20`, compara ao inteiro
+  configurado e inverte o resultado quando `ContainType != 3`. Entidade
+  ausente retorna falso.
+- **`CBuffCondition::GetTargetResult`**: consulta
+  `Entity::getStateDetails(id)` e o byte `StateDetails +0x4`; o valor é
+  combinado por XOR com `(ContainType == 2)` e testado contra zero. Estado
+  ausente corresponde ao caso `(ContainType == 2)`; entidade ausente retorna
+  falso. O byte completo `0–255` é preservado no modelo.
+
+Foram conferidas por hash as tabelas originais `conditioncamp` (16 registros),
+`conditionentitytype` (12) e `conditionbuff` (3.544). O relatório distribuível
+contém somente somários e regras, nunca nomes/dados individuais dos recursos.
+
+`src/concrete_conditions.lua` implementa funções puras que **recebem campos
+internos já resolvidos pelo teste**, sem conhecer objetos reais da partida.
+O painel **Predicados (`Ctrl+U`)** apresenta onze cenários demonstrativos;
+as setas alternam os cenários e `R` reinicia. O painel da Fase 35, as
+ferramentas de auditoria e a cena controlável da Fase 20 permanecem disponíveis.
+
+**Limites:** o sistema original de objetos, origens de habilidades, estados de
+buff, equipe real das entidades e a cadeia de filtros do ataque `4010020`
+não foram portados. Os predicados ainda **não** determinam alvos reais, nem
+golpes ou dano. A interface LÖVE no Windows ainda não foi validada manualmente.
+
+**Teste focal:** `python -m unittest tests.test_concrete_conditions_phase36 -v`.
+**Auditoria:** `python tools/analisar_condicoes_concretas.py` com o ELF
+original instalado em `lib/arm64-v8a/` (mantido fora do repositório).

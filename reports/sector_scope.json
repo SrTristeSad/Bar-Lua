@@ -1,0 +1,128 @@
+{
+  "phase": 33,
+  "apk_version": "1.0.1811",
+  "elf_sha256": "8199604d199b57ebe329725c9a624b85517f495f78c1dad745449684750e4677",
+  "sector_sha256": "385aece1b985ad3103f7c6b37d9dd57a8e52c9edcf7b66d7778070933fc142e7",
+  "verified_functions": [
+    {
+      "name": "SelectSector::load",
+      "virtual_address": "0x152f860",
+      "bytes": 504,
+      "instructions": 126,
+      "checks": 6
+    },
+    {
+      "name": "CircleParameters::load",
+      "virtual_address": "0x186bd24",
+      "bytes": 120,
+      "instructions": 30,
+      "checks": 4
+    },
+    {
+      "name": "Sector::constructor",
+      "virtual_address": "0xe63c90",
+      "bytes": 200,
+      "instructions": 50,
+      "checks": 2
+    },
+    {
+      "name": "Sector::GetSelectTargets",
+      "virtual_address": "0xe63e14",
+      "bytes": 632,
+      "instructions": 158,
+      "checks": 10
+    },
+    {
+      "name": "Hero::getValueByType",
+      "virtual_address": "0xe58af8",
+      "bytes": 652,
+      "instructions": 163,
+      "checks": 3
+    },
+    {
+      "name": "Entity::getValueByType",
+      "virtual_address": "0xe45d5c",
+      "bytes": 352,
+      "instructions": 88,
+      "checks": 2
+    }
+  ],
+  "verified_instructions": 615,
+  "checkpoints": 27,
+  "sector_records": 84,
+  "value_type_counts": {
+    "3": 18,
+    "4": 3,
+    "13": 1,
+    "104": 1,
+    "113": 2,
+    "1001": 59
+  },
+  "scope3_count": 18,
+  "scope3_with_simple_parameter": 17,
+  "samples": [
+    {
+      "id": 10052,
+      "value_type": 3,
+      "factor_percent": 100,
+      "operation_absent": true,
+      "direction_type": 1,
+      "sector_width_int": 120
+    },
+    {
+      "id": 20052,
+      "value_type": 3,
+      "factor_percent": 100,
+      "operation_absent": true,
+      "direction_type": 1,
+      "sector_width_int": 90
+    },
+    {
+      "id": 30052,
+      "value_type": 3,
+      "factor_percent": 115,
+      "operation_absent": false,
+      "direction_type": 1,
+      "sector_width_int": 90
+    },
+    {
+      "id": 40052,
+      "value_type": 3,
+      "factor_percent": 90,
+      "operation_absent": true,
+      "direction_type": 1,
+      "sector_width_int": 180
+    },
+    {
+      "id": 50052,
+      "value_type": 3,
+      "factor_percent": 70,
+      "operation_absent": true,
+      "direction_type": 1,
+      "sector_width_int": 360
+    },
+    {
+      "id": 240052,
+      "value_type": 3,
+      "factor_percent": 170,
+      "operation_absent": true,
+      "direction_type": 1,
+      "sector_width_int": 30
+    }
+  ],
+  "query_aabb_divisor": 100.0,
+  "confirmed_path": [
+    "HeroConfig+0x40 -> Hero+0x330 -> ValueType 3",
+    "SelectSector::load carrega CircleParameters pelo ponteiro de offset +0x48",
+    "CSelectTargetSector::GetSelectTargets le ValueType e fator e chama Entity::getValueByType",
+    "Hero::getValueByType usa fator/100 multiplicado por Hero+0x330 para ValueType 3",
+    "Setor calcula centro deslocado e consulta b2World::QueryAABB com centro e raio divididos por 100",
+    "Apos QueryAABB ha chamada virtual para filtragem; consulta AABB nao garante alvo atingido"
+  ],
+  "limits": [
+    "Apenas parametros com operacao ausente (-) podem ser calculados pelo modulo Lua isolado.",
+    "O AABB e somente etapa inicial de selecao; setor final, exclusoes e linha de visao nao foram reproduzidos.",
+    "O caminho configuravel nao prova vinculo do setor 10052 com a habilidade 4010020.",
+    "Escala 100 verificada no QueryAABB nao implica pixels ou hitbox valida na cena controlavel."
+  ]
+}

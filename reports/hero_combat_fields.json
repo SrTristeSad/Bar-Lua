@@ -1,0 +1,121 @@
+{
+  "phase": 32,
+  "apk_version": "1.0.1811",
+  "library_sha256": "8199604d199b57ebe329725c9a624b85517f495f78c1dad745449684750e4677",
+  "config_sha256": "33402fa701f4fd425779868cd805c11e9ae88cce74bf298331715035aff6d3a5",
+  "verified_function_count": 9,
+  "verified_instruction_count": 1010,
+  "extra_checks": 18,
+  "new_functions": [
+    {
+      "name": "Hero::setDamage(int)",
+      "address": "0xe59824",
+      "bytes": 8,
+      "instructions": 2,
+      "checks": 2
+    },
+    {
+      "name": "Hero::setDamageScope(int)",
+      "address": "0xe59834",
+      "bytes": 8,
+      "instructions": 2,
+      "checks": 2
+    },
+    {
+      "name": "Hero::reInit(int, bool)",
+      "address": "0xe569f0",
+      "bytes": 1432,
+      "instructions": 358,
+      "checks": 8
+    }
+  ],
+  "config_slots": [
+    {
+      "config_offset": "0x38",
+      "hero_offsets": [
+        "0xc0"
+      ],
+      "meaning": "nao identificado",
+      "confirmed": false
+    },
+    {
+      "config_offset": "0x3c",
+      "hero_offsets": [
+        "0x32c"
+      ],
+      "meaning": "dano-base (Hero::setDamage)",
+      "confirmed": true,
+      "value_type": 2
+    },
+    {
+      "config_offset": "0x40",
+      "hero_offsets": [
+        "0x330"
+      ],
+      "meaning": "parametro de alcance de dano (Hero::setDamageScope)",
+      "confirmed": true,
+      "value_type": 3
+    },
+    {
+      "config_offset": "0x44",
+      "hero_offsets": [
+        "0x314",
+        "0x310"
+      ],
+      "meaning": "HP inicial",
+      "confirmed": true
+    },
+    {
+      "config_offset": "0x48",
+      "hero_offsets": [
+        "0x328",
+        "0xe0"
+      ],
+      "meaning": "velocidade-base",
+      "confirmed": true
+    },
+    {
+      "config_offset": "0x4c",
+      "hero_offsets": [
+        "0x31c",
+        "0x318"
+      ],
+      "meaning": "nao identificado",
+      "confirmed": false
+    },
+    {
+      "config_offset": "0x50",
+      "hero_offsets": [
+        "0x1b8"
+      ],
+      "meaning": "nao identificado",
+      "confirmed": false
+    },
+    {
+      "config_offset": "0x54",
+      "hero_offsets": [
+        "0x184"
+      ],
+      "meaning": "nao identificado",
+      "confirmed": false
+    }
+  ],
+  "damage": {
+    "config_slot": "0x3c",
+    "hero_offset": "0x32c",
+    "setter": "Hero::setDamage(int)",
+    "value_type": 2
+  },
+  "damage_scope": {
+    "config_slot": "0x40",
+    "hero_offset": "0x330",
+    "setter": "Hero::setDamageScope(int)",
+    "value_type": 3
+  },
+  "limits": [
+    "O nome setDamage indica parametro de dano, nao a formula final aplicada ao alvo.",
+    "setDamageScope confirma um parametro de escopo/alcance de dano, mas sua unidade, formato e efeito nas hitboxes nao foram recuperados.",
+    "Nao identificado aqui nenhum campo de defesa.",
+    "Offsets, opcodes e SHA valem apenas para ARM64 BarbarQ 1.0.1811."
+  ]
+}

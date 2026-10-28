@@ -1,0 +1,83 @@
+{
+  "phase": 34,
+  "apk_version": "1.0.1811",
+  "elf_sha256": "8199604d199b57ebe329725c9a624b85517f495f78c1dad745449684750e4677",
+  "verified_functions": [
+    {
+      "name": "CSectorQueryCallback::Query",
+      "address": "0xe62134",
+      "bytes": 140,
+      "instructions": 35,
+      "checks": 1
+    },
+    {
+      "name": "CSectorQueryCallback::ReportFixture",
+      "address": "0xe621c0",
+      "bytes": 624,
+      "instructions": 156,
+      "checks": 32
+    },
+    {
+      "name": "CSelectTargetSector::Filter",
+      "address": "0xe63d58",
+      "bytes": 188,
+      "instructions": 47,
+      "checks": 9
+    },
+    {
+      "name": "CSelectTargetSector::GetSelectTargets",
+      "address": "0xe63e14",
+      "bytes": 632,
+      "instructions": 158,
+      "checks": 3
+    }
+  ],
+  "verified_instructions": 396,
+  "checkpoints": 45,
+  "vtable_dimension_relocations": {
+    "0x24bdb18": "_ZNK6Entity17getPhysicalRadiusEv",
+    "0x24bdb20": "_ZNK6Entity16getPhysicalRectAEv",
+    "0x24bdb28": "_ZNK6Entity16getPhysicalRectBEv"
+  },
+  "angular_epsilon": 9.999999747378752e-05,
+  "callback": {
+    "body_user_data_offset": "0xb0",
+    "entity_type_mask_offset": "0x20",
+    "callback_type_mask_offset": "0x28",
+    "entity_shape_type_offset": "0x1a8",
+    "shape_types": {
+      "1": "circulo + Entity::getPhysicalRadius",
+      "2": "retangulo + getPhysicalRectA/B",
+      "3": "insercao direta"
+    },
+    "circle_boundary": "distancia quadrada estritamente menor que (raio busca+raio virtual)^2",
+    "rect_boundary": "abs(dx),abs(dy) menores ou iguais a (raio busca+dimensao virtual*0.5)",
+    "angle_boundary": "angulo acosDeg < trunc(largura do setor /2), depois de limite de vetor quase zero",
+    "angle_epsilon_reference": "0x1e98550",
+    "fixture_callback_continues": true
+  },
+  "post_filter": {
+    "function": "CSelectTargetSector::Filter",
+    "condition_ids_offset": "0x28",
+    "calls": [
+      "CConditionManager::GetCondition",
+      "CCondition::SetTargetEntitys",
+      "CCondition::SetCreateEntity",
+      "CCondition::SetBindSkill",
+      "condicao virtual +0x30"
+    ],
+    "stops_when_target_vector_empty": true
+  },
+  "confirmed_order": [
+    "b2World::QueryAABB",
+    "CSectorQueryCallback::ReportFixture",
+    "CSelectTargetSector::Filter (chamada virtual +0x8)"
+  ],
+  "limits": [
+    "Fixture pode ser aceita no callback mas eliminada pelos CCondition posteriores.",
+    "Getters de dimensoes comprovados por vtable; valores concretos por entidade e fonte de colisores ainda exigem investigacao.",
+    "A entidade de forma 3 entra diretamente na lista depois da mascara; nao passar pelo teste angular nao comprova dano.",
+    "Sem prova de vinculo entre habilidade 4010020, seletor especifico e aplicacao de dano.",
+    "A bancada Lua modela somente predicados estaticos confirmados, sem invocar Box2D nem efeitos."
+  ]
+}

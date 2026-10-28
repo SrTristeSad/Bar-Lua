@@ -3,6 +3,12 @@
 local M = {}
 M.hpSlot = '0x44'
 M.speedSlot = '0x48'
+M.damageSlot = '0x3c'
+M.damageScopeSlot = '0x40'
+M.damageHeroOffset = '0x32c'
+M.damageScopeHeroOffset = '0x330'
+M.valueTypeDamage = 2
+M.valueTypeDamageScope = 3
 M.speedHeroOffset = '0x328'
 M.valueTypeSpeed = 19
 M.hpCurrent = '0x314'
@@ -24,6 +30,8 @@ end
 function M.slotLabel(slot)
     if slot == M.hpSlot then return 'HP inicial' end
     if slot == M.speedSlot then return 'velocidade-base' end
+    if slot == M.damageSlot then return 'dano-base' end
+    if slot == M.damageScopeSlot then return 'alcance de dano (parametro)' end
     return 'atributo nao identificado'
 end
 
@@ -76,6 +84,45 @@ function M.validatedHpTypes(catalog)
     local reference = M.valueType(catalog, M.valueTypeHpReference)
     return current and current.offset == M.hpCurrent and
         reference and reference.offset == M.hpReference or false
+end
+
+-- O significado desses setters e comprovado, mas o alcance nao tem unidade
+-- conhecida; nao convertê-lo em raio ou usar para atingir alvos na cena.
+local function rawCombat(levelRow, slot)
+    if type(levelRow)~='table' or type(levelRow.values)~='table' then
+        return nil,'configuracao indisponivel'
+    end
+    local v=levelRow.values[slot]
+    if type(v)~='number' or v%1~=0 or v<0 then
+        return nil,'parametro ausente ou invalido'
+    end
+    return v
+end
+
+function M.configDamage(levelRow)
+    return rawCombat(levelRow,M.damageSlot)
+end
+
+function M.configDamageScope(levelRow)
+    return rawCombat(levelRow,M.damageScopeSlot)
+end
+
+function M.validatedCombatTypes(catalog,report)
+    if type(report)~='table' or report.phase~=32 or
+        type(report.damage)~='table' or type(report.damage_scope)~='table' then
+        return false
+    end
+    local a,b=M.valueType(catalog,M.valueTypeDamage),M.valueType(catalog,M.valueTypeDamageScope)
+    return a and b and a.offset==M.damageHeroOffset and
+       b.offset==M.damageScopeHeroOffset and
+       report.damage.slot==M.damageSlot and
+       report.damage.offset==M.damageHeroOffset and
+       report.damage.value_type==M.valueTypeDamage and
+       report.damage.setter=='Hero::setDamage(int)' and
+       report.damage_scope.slot==M.damageScopeSlot and
+       report.damage_scope.offset==M.damageScopeHeroOffset and
+       report.damage_scope.value_type==M.valueTypeDamageScope and
+       report.damage_scope.setter=='Hero::setDamageScope(int)' or false
 end
 
 return M

@@ -1,0 +1,88 @@
+{
+  "phase": 35,
+  "apk_version": "1.0.1811",
+  "elf_sha256": "8199604d199b57ebe329725c9a624b85517f495f78c1dad745449684750e4677",
+  "verified_functions": [
+    {
+      "name": "CCondition::GetTargetResult",
+      "address": "0xe44428",
+      "size": 148,
+      "instructions": 37,
+      "checks": 6
+    },
+    {
+      "name": "CCondition::FilterTarget",
+      "address": "0xe444bc",
+      "size": 188,
+      "instructions": 47,
+      "checks": 10
+    },
+    {
+      "name": "CPackCondition::FilterTarget",
+      "address": "0xe454b0",
+      "size": 160,
+      "instructions": 40,
+      "checks": 8
+    },
+    {
+      "name": "CTargetsCountCondition::FilterTarget",
+      "address": "0xe45098",
+      "size": 320,
+      "instructions": 80,
+      "checks": 9
+    },
+    {
+      "name": "CConditionManager::GetCondition",
+      "address": "0xe45b5c",
+      "size": 116,
+      "instructions": 29,
+      "checks": 4
+    }
+  ],
+  "verified_instructions": 233,
+  "checkpoints": 37,
+  "table_summaries": {
+    "conditionbuff": {
+      "count": 3544,
+      "sha256": "b662aca7fb1c25bfbda84ae0d7a8b5c553588c4f1aea6c26fc01c63aeb11d43b"
+    },
+    "conditioncamp": {
+      "count": 16,
+      "sha256": "3813b995eedde1104ca67d53f3a9a8cd2b3a1222016f4a42cda15fb56d5cc694"
+    },
+    "conditionentitytype": {
+      "count": 12,
+      "sha256": "d725980099c38468fe7fa09e81d3cbb90dc4709acad31408496ac3dd01a6ae8a"
+    },
+    "conditionpack": {
+      "count": 13,
+      "sha256": "b89dbcc6deeb32b91289f4bbad3ba47be6fc621305b0125b3cb783ea8771ff40"
+    },
+    "conditionskillentitytype": {
+      "count": 4,
+      "sha256": "ce34067c6f082965b402e485a318c95134183d9dced8c8d0c36808f32def3cf6"
+    },
+    "conditiontargetscount": {
+      "count": 7,
+      "sha256": "4664aa5064801a5830259a85edf31734dd7edb076144d207e539b80ebf287bf8"
+    },
+    "conditionvaluecompare": {
+      "count": 1406,
+      "sha256": "7a013fa6e0ce953d5f60873824d03796457d85a31d70de6e27ee23623ebca24a"
+    }
+  },
+  "confirmed_rules": [
+    "GetTargetResult (base): avalia todos os CSkillEntity e retorna falso ao primeiro predicado falso; vetor vazio retorna verdadeiro.",
+    "FilterTarget (base): remove candidato reprovado substituindo-o pelo ultimo elemento do vetor; ordem dos alvos nao preservada.",
+    "CPackCondition::FilterTarget: consulta cada ID do pacote, compartilha vetor e contextos e executa seu FilterTarget virtual na sequencia.",
+    "CTargetsCountCondition::FilterTarget: se n<total, redimensiona vetor para n; modo aleatorio realiza trocas antes do corte.",
+    "CSelectTargetSector::Filter (F34): para a cadeia quando a lista de alvos fica vazia."
+  ],
+  "limits": [
+    "Nao se reproduz ainda o significado de ContainType nem as sete subclasses concretas de condicao.",
+    "Nao foi reproduzida a sequencia de RandNum::__NextInt para limites aleatorios.",
+    "Os arquivos originais completos e nomes de configuracao permanecem apenas no cache privado, nao no GitHub.",
+    "Nao ha prova de que habilidade 4010020 utilize algum pacote de condicoes especifico.",
+    "A demonstracao Lua nao seleciona alvos finais, nao aplica dano e nao integra fisica."
+  ]
+}

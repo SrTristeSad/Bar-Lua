@@ -2,6 +2,7 @@
 -- Todos os demais atributos permanecem numericos e sem nomes inventados.
 local values = require('src.level_attributes')
 local schema = require('src.hero_schema')
+local combatEvidence = require('reports.hero_combat_fields')
 local M = {level=1, showTypes=false, typePage=1}
 local PER_PAGE = 11
 
@@ -27,7 +28,7 @@ function M.draw(group, report, panel, fieldReport, semanticReport)
         if y > panel.h-26 then return end
         panel.put(str,panel.x+14,panel.y+y,color or {0.88,0.92,0.96},panel.small)
     end
-    line('FASE 31 | HeroConfig: HP e velocidade-base / ARM64 (1.0.1811)',12,{1,0.84,0.47})
+    line('FASE 32 | HeroConfig: HP, dano, escopo e velocidade / ARM64 (1.0.1811)',12,{1,0.84,0.47})
     line('T: alternar Niveis / ValueType  |  setas: navegar  |  R: reiniciar',40)
     if M.showTypes then
         if not fieldReport or not schema.validatedHpTypes(fieldReport) then
@@ -40,13 +41,13 @@ function M.draw(group, report, panel, fieldReport, semanticReport)
         for idx=first,math.min(first+PER_PAGE-1,#fieldReport.value_types) do
             local info=fieldReport.value_types[idx]
             if info then
-                local meaning=(info.id==5 and 'HP atual') or (info.id==11 and 'HP referencia') or (info.id==19 and 'velocidade-base') or
+                local meaning=(info.id==2 and 'dano-base') or (info.id==3 and 'alcance dano (param.)') or (info.id==5 and 'HP atual') or (info.id==11 and 'HP referencia') or (info.id==19 and 'velocidade-base') or
                     (info.kind=='delegate_entity' and 'encaminha para Entity') or
                     (info.kind=='derived_value' and 'valor calculado') or 'campo nao nomeado'
                 line(string.format('%2d      %-8s      %s',info.id,info.offset or '--',meaning),153+(idx-first)*30)
             end
         end
-        line('Comprovados: ValueType 5 (HP), 11 (HP ref.) e 19 (velocidade).',520,{1,0.74,0.57})
+        line('ValueType 2: dano | 3: alcance | 5/11: HP | 19: velocidade.',520,{1,0.74,0.57})
         return
     end
     if not group or not group.levels or #group.levels==0 then
@@ -80,9 +81,19 @@ function M.draw(group, report, panel, fieldReport, semanticReport)
     else
         line('Relatorios nativos F30/F31 indisponiveis.',470)
     end
-    if report and report.total_instructions then
-        line('F29: '..report.total_instructions..' | F31: '..tostring(semanticReport and semanticReport.verified_instruction_count or '?')..' instrucoes',520)
+    if fieldReport and schema.validatedCombatTypes(fieldReport,combatEvidence) then
+        local damage=schema.configDamage(row)
+        local scope=schema.configDamageScope(row)
+        if damage and scope then
+            line(string.format('Dano-base: %d (VT 2) | alcance bruto: %d (VT 3)',damage,scope),519,{0.74,1,0.80})
+            line('Alcance sem unidade confirmada; nao e raio de colisao validado.',542,{1,0.74,0.57})
+        end
+    else
+        line('Relatorio F32 de dano/escopo indisponivel ou inconsistente.',519)
     end
-    line('Seis slots permanecem sem nome; nao altera a cena ou a fisica.',532,{1,0.74,0.57})
+    if report and report.total_instructions then
+        line('F29: '..report.total_instructions..' | F32: '..tostring(combatEvidence.verified_instruction_count)..' instrucoes',566)
+    end
+    line('Quatro slots permanecem sem nome; a cena e o combate nao mudam.',589,{1,0.74,0.57})
 end
 return M

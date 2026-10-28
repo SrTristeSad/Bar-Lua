@@ -1,0 +1,121 @@
+{
+  "phase": 36,
+  "apk_version": "1.0.1811",
+  "elf_sha256": "8199604d199b57ebe329725c9a624b85517f495f78c1dad745449684750e4677",
+  "functions": [
+    {
+      "name": "CCampCondition::Init",
+      "address": "0xe44578",
+      "bytes": 8,
+      "instructions": 2,
+      "checks": 1
+    },
+    {
+      "name": "CCampCondition::GetCreatorResult",
+      "address": "0xe44580",
+      "bytes": 268,
+      "instructions": 67,
+      "checks": 8
+    },
+    {
+      "name": "CCampCondition::GetTargetResult",
+      "address": "0xe446ac",
+      "bytes": 268,
+      "instructions": 67,
+      "checks": 8
+    },
+    {
+      "name": "CBuffCondition::GetTargetResult",
+      "address": "0xe447f0",
+      "bytes": 108,
+      "instructions": 27,
+      "checks": 6
+    },
+    {
+      "name": "CEntityKindTypeCondition::GetCreatorResult",
+      "address": "0xe44864",
+      "bytes": 80,
+      "instructions": 20,
+      "checks": 4
+    },
+    {
+      "name": "CEntityKindTypeCondition::GetTargetResult",
+      "address": "0xe448b4",
+      "bytes": 84,
+      "instructions": 21,
+      "checks": 4
+    }
+  ],
+  "verified_instructions": 204,
+  "checkpoints": 31,
+  "jump_tables_checked": 2,
+  "config_tables": {
+    "conditioncamp": {
+      "count": 16,
+      "sha256": "3813b995eedde1104ca67d53f3a9a8cd2b3a1222016f4a42cda15fb56d5cc694",
+      "contain_types": [
+        3,
+        4
+      ],
+      "condition_args": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ]
+    },
+    "conditionbuff": {
+      "count": 3544,
+      "sha256": "b662aca7fb1c25bfbda84ae0d7a8b5c553588c4f1aea6c26fc01c63aeb11d43b",
+      "contain_types": [
+        1,
+        2
+      ],
+      "condition_args": [
+        10061,
+        10062,
+        20061,
+        20062,
+        30060,
+        30061,
+        30062,
+        40060,
+        40061,
+        40062,
+        50060,
+        50061
+      ]
+    },
+    "conditionentitytype": {
+      "count": 12,
+      "sha256": "d725980099c38468fe7fa09e81d3cbb90dc4709acad31408496ac3dd01a6ae8a",
+      "contain_types": [
+        3,
+        4
+      ],
+      "condition_args": [
+        1,
+        2,
+        4,
+        8,
+        16,
+        32,
+        128
+      ]
+    }
+  },
+  "confirmed_rules": [
+    "CCampCondition: campos Entity +0x17C; 8 seletores de camp; ContainType==3 aceita comparacao, outros invertem; NULL falso.",
+    "CEntityKindTypeCondition: campo Entity +0x20 compara inteiro configurado; ContainType==3 aceita igualdade, outros negam; NULL falso.",
+    "CBuffCondition: getStateDetails(id) retorna opcional; byte +0x4 combina-se por XOR com (ContainType==2); entidade NULL falso."
+  ],
+  "limitations": [
+    "Os tres predicados sao isolados; nao reproduzem todo o estado de Entity, os buffs nem a associacao a habilidades.",
+    "Nao ha evidencia de que a habilidade 4010020 use estes IDs de condicao.",
+    "Nenhum dano e aplicado, nenhum alvo final ou callback dinamico e simulado."
+  ]
+}
