@@ -1,7 +1,7 @@
 -- Bar-Lua | laboratório de engenharia reversa do BarbarQ 1.0.1811.
 -- NÃO é o jogo: apenas visualização fiel de dados originais decodificados.
-local modes = {"Mapas TMX", "Imagens", "Atlas .plist/.bplist", "Configurações", "Animações", "Cenas .csb", "ELF ARM64", "Fluxo ARM64", "Movimento ARM64", "Entity / Box2D", "Contatos ARM64"}
-local tabLabels = {"Mapas", "Imagens", "Atlas", "Config.", "Animações", "Cenas", "ELF", "Fluxo", "Mov.", "Entid.", "Contato"}
+local modes = {"Mapas TMX", "Imagens", "Atlas .plist/.bplist", "Configurações", "Animações", "Cenas .csb", "ELF ARM64", "Fluxo ARM64", "Movimento ARM64", "Entity / Box2D", "Contatos ARM64", "Colisores ARM64"}
+local tabLabels = {"Mapas", "Imagens", "Atlas", "Config.", "Animações", "Cenas", "ELF", "Fluxo", "Mov.", "Entid.", "Contato", "Colisão"}
 local animationView = require("src.animation_view")
 local sceneView = require("src.scene_view")
 local nativeView = require("src.native_view")
@@ -9,11 +9,12 @@ local flowView = require("src.flow_view")
 local movementView = require("src.movement_view")
 local entityMoveView = require("src.entity_move_view")
 local contactView = require("src.contact_view")
+local colliderView = require("src.collider_view")
 local sceneResources = require("src.scene_resources")
 local spriteGeometry = require("src.sprite_geometry")
 local mode, selected, search, zoom = 1, 1, "", 1
-local lists = {{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}}
-local maps, atlases, animations, scenes, nativeCatalog, flowCatalog, contactCatalog = {}, {}, {}, {}, {}, {}, {}
+local lists = {{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}}
+local maps, atlases, animations, scenes, nativeCatalog, flowCatalog, contactCatalog, colliderCatalog = {}, {}, {}, {}, {}, {}, {}, {}
 local sceneResourceIndex = nil
 local imageIndex = {}
 local textures, quads = {}, {}
@@ -136,7 +137,7 @@ local function drawShell(w, h, list)
         put(label, 13, y, i == selected and {1, 1, 1} or {0.74, 0.80, 0.84}, small)
     end
     background(0, h - BOTTOM, w, BOTTOM, {0.12, 0.16, 0.20})
-    put("↑↓: selecionar  •  [ ]: sprite  •  F1–F11: painel  •  Esc: limpar", 13, h - BOTTOM + 7, {0.85, 0.90, 0.96}, small)
+    put("↑↓: selecionar  •  [ ]: sprite  •  F1–F12: painel  •  Esc: limpar", 13, h - BOTTOM + 7, {0.85, 0.90, 0.96}, small)
     put(status, 13, h - BOTTOM + 29, {0.72, 0.80, 0.87}, small)
 end
 
@@ -345,6 +346,7 @@ function love.load()
     nativeCatalog = readLua("reports/native_findings.lua")
     flowCatalog = readLua("reports/native_flow.lua")
     contactCatalog = readLua("reports/native_contacts.lua")
+    colliderCatalog = readLua("reports/native_colliders.lua")
     for _, map in ipairs(maps) do lists[1][#lists[1]+1] = map end
     scan("assets_original", {png = true, jpg = true, jpeg = true}, lists[2])
     for _, atlas in ipairs(atlases) do lists[3][#lists[3]+1] = atlas end
@@ -356,6 +358,7 @@ function love.load()
     lists[9][1] = {name="Hero::move_update (vetores)"}
     lists[10][1] = {name="Entity::move (Box2D)"}
     for _,entry in ipairs(contactCatalog) do lists[11][#lists[11]+1] = entry end
+    for _,entry in ipairs(colliderCatalog) do lists[12][#lists[12]+1] = entry end
     for _, path in ipairs(lists[2]) do
         imageIndex[path:gsub("^assets_original/", ""):lower()] = path:gsub("^assets_original/", "")
     end
@@ -426,6 +429,8 @@ function love.draw()
         entityMoveView.draw(item, {x=x, y=y, w=pw, h=ph, put=put, background=background, small=small})
     elseif mode == 11 then
         contactView.draw(item, {x=x, y=y, w=pw, h=ph, put=put, background=background, small=small})
+    elseif mode == 12 then
+        colliderView.draw(item, {x=x, y=y, w=pw, h=ph, put=put, background=background, small=small})
     else
         local message = (mode == 1 or mode == 3) and "Sem dados preparados. Execute tools/preparar_recursos.py." or "Nenhum recurso encontrado. Extraia o APK para assets_original."
         put(message, x + 18, y + 40)
