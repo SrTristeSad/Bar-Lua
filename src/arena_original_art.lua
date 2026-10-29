@@ -184,7 +184,9 @@ function Art.drawHero(art,p,elapsed,attacking,enemy)
     local frame
     if attacking then
         -- Compressed to the alpha cooldown (not the game's original fps).
-        local progress=1-math.min(1,p.cooldown/math.max(p.attackCooldown,0.001))
+        local duration=enemy and 0.24 or math.max(p.attackCooldown or 0.42,0.001)
+        local remaining=enemy and (p.attackVisual or 0) or (p.cooldown or 0)
+        local progress=1-math.min(1,remaining/duration)
         frame=progress*math.max(0,mov.duration-0.001)
     else
         frame=(elapsed*30)%mov.duration -- provisional playback rate
