@@ -1,0 +1,23 @@
+name: Arena Lua (alpha)
+on:
+  push:
+    paths:
+      - 'src/arena_game.lua'
+      - 'src/arena_view.lua'
+      - 'main.lua'
+      - 'conf.lua'
+      - 'tests/test_arena_game.lua'
+      - 'tests/test_arena_game_runner.py'
+      - '.github/workflows/arena-lua.yml'
+  workflow_dispatch:
+jobs:
+  arena:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Lua
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y lua5.4
+      - name: Pure Lua gameplay tests and syntax
+        run: python3 -m unittest discover -s tests -p 'test_arena_game_runner.py' -v
