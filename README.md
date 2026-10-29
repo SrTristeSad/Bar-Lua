@@ -1,5 +1,40 @@
 # Bar-Lua — BarbarQ 1.0.1811 no Windows (reconstrução fiel em Lua)
 
+
+## Arena jogável — primeira vertical slice (alfa)
+
+**Agora `love .` abre diretamente uma arena jogável**, inclusive sem os recursos
+extraídos do APK. A antiga interface de engenharia reversa continua preservada.
+
+- `WASD` ou setas: movimentar.
+- `Espaço`, `J` ou clique esquerdo: atacar na direção do movimento.
+- `P`: pausar/continuar; `R`: reiniciar partida.
+- `Esc`: abrir o laboratório antigo; `Ctrl+Enter`: voltar à arena.
+
+A arena inicial tem inimigos que perseguem e atacam, HP, dano, cooldown,
+pontuação, três ondas e vitória/derrota. O motor de regras é Lua independente
+do desenho (`src/arena_game.lua`); a camada LÖVE2D está em
+`src/arena_view.lua`. Isso permite testar combate e substituir gráficos depois.
+
+**Fidelidade:** é uma versão `ALFA` de jogabilidade, não uma reprodução 1:1.
+Inimigos, gráficos procedurais, velocidade, alcance, recarga, dano inimigo,
+HP e duração das ondas são parâmetros provisórios. O valor de ataque de teste
+59 coincide com um atributo observado anteriormente, mas ainda **não** é a
+fórmula original do ataque 4010020. Nada disso deve ser descrito como
+mecânica confirmada do BarbarQ. A integração com personagens, efeitos e mapas
+originais continua como tarefa de desenvolvimento.
+
+Testar a lógica separadamente, sem LÖVE2D:
+
+```bash
+lua tests/test_arena_game.lua
+```
+
+O jogo completo, menus originais, itens, progressão e multiplayer continuam
+pendentes. Os recursos do APK não são redistribuídos pelo repositório.
+
+---
+
 **Objetivo:** estudar um APK original do BarbarQ e reproduzir sua experiência no PC com **Lua e LÖVE2D**, sem emulador Android. Isto **não** é um jogo inspirado no BarbarQ. Os recursos recuperados servem de referência, mas portar a lógica original exige engenharia reversa adicional.
 
 ## Fase 26 — o callback `onDied` e a rotina `dieLogic` são distintos
