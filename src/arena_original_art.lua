@@ -4,6 +4,7 @@
 local resolver = require('src.sprite_resolver')
 local pose = require('src.pose')
 local geometry = require('src.sprite_geometry')
+local enemyCatalog = require('src.arena_enemy_catalog')
 local Art = {}
 local function pickMap(maps)
     for _, map in ipairs(maps or {}) do
@@ -36,6 +37,8 @@ function Art.prepare(maps, animations, atlases)
         drawnTiles=0, drawnBones=0, missingTextures=0,
         usesOriginalMap=false, usesOriginalHero=false
     }
+    result.enemyAssets=enemyCatalog.select(animations,result.spriteIndex,12)
+    result.usesOriginalEnemy=false
     return result
 end
 function Art.bounds(art)
@@ -160,14 +163,23 @@ local function chooseDirection(p)
     return 4
 end
 function Art.drawHero(art,p,elapsed,attacking,enemy)
-    if not art or not art.hero then return false end
-    local arm=art.hero.armatures and art.hero.armatures[1]
+    if not art then return false end
+    local asset=art.hero
+    if enemy then
+        local choices=art.enemyAssets or {}
+        if #choices==0 then return false end
+        local index=(math.floor(tonumber(p.skin) or 1)-1)%#choices+1
+        asset=choices[index]
+    end
+    if not asset then return false end
+    local arm=asset.armatures and asset.armatures[1]
     if not arm then return false end
     local variant=chooseDirection(p)
     local action=attacking and 'attack1' or ((p.walking or enemy) and 'walk' or 'stand')
-    local mov=movement(art.hero,action,variant)
-    if not mov then mov=movement(art.hero,action,0) end
-    if not mov then mov=movement(art.hero,'stand',0) end
+    local mov=movement(asset,action,variant)
+    if not mov then mov=movement(asset,action,0) end
+    if not mov and attacking then mov=movement(asset,'attack',0) end
+    if not mov then mov=movement(asset,'stand',0) end
     if not mov then return false end
     local frame
     if attacking then
@@ -184,7 +196,7 @@ function Art.drawHero(art,p,elapsed,attacking,enemy)
     for _,node in ipairs(nodes) do
         local index=node.display_index
         local display=index and index>=0 and node.bone.displays and node.bone.displays[index+1]
-        local sprite=display and resolver.find(art.spriteIndex,art.hero,display)
+        local sprite=display and resolver.find(art.spriteIndex,asset,display)
         if sprite and node.matrix then
             local img=image(art,sprite.atlas.image)
             if img then
@@ -207,7 +219,9 @@ function Art.drawHero(art,p,elapsed,attacking,enemy)
     end
     love.graphics.pop()
     art.drawnBones=drawn
-    if drawn>0 then art.usesOriginalHero=true end
+    if drawn>0 then
+        if enemy then art.usesOriginalEnemy=true else art.usesOriginalHero=true end
+    end
     return drawn>0
 end
 return Art
