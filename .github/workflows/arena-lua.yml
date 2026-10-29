@@ -11,6 +11,7 @@ on:
       - 'tests/test_arena_game.lua'
       - 'tests/test_arena_original_art.lua'
       - 'tests/test_arena_enemy_catalog.lua'
+      - 'tests/create_arena_visual_fixture.py'
       - 'tests/test_arena_game_runner.py'
       - '.github/workflows/arena-lua.yml'
   workflow_dispatch:
@@ -34,6 +35,12 @@ jobs:
           cat love-smoke.log
           if [ "$code" -ne 0 ] && [ "$code" -ne 124 ]; then exit "$code"; fi
           if grep -E '^Error:|stack traceback|Error loading game' love-smoke.log; then exit 1; fi
+      - name: Render real map and actor pipeline in LÖVE
+        run: |
+          python3 tests/create_arena_visual_fixture.py
+          SDL_AUDIODRIVER=dummy ALSOFT_DRIVERS=null timeout 15s xvfb-run -a love /tmp/bar-lua-visual-smoke >visual-smoke.log 2>&1
+          cat visual-smoke.log
+          grep -F 'ARENA VISUAL SMOKE OK' visual-smoke.log
       - name: Package playable alpha (without proprietary APK assets)
         run: zip -q -r Bar-Lua-Alpha.love conf.lua main.lua src reports
       - uses: actions/upload-artifact@v4
