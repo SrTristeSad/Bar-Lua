@@ -1,6 +1,7 @@
 -- BarbarQ Lua: playable vertical slice (prototype rules, NOT verified 1:1).
 -- Deterministic pure-Lua combat model. Rendering and input are separate.
 local Game = {}
+local collision = require('src.arena_collision')
 local TAU = math.pi * 2
 local function clamp(value, minimum, maximum)
     return math.max(minimum, math.min(maximum, value))
@@ -29,6 +30,7 @@ function Game.spawnWave(g)
             hitFlash=0, attackVisual=0, skin=i, alive=true
         }
     end
+    collision.solve(g)
     g.phase = 'playing'
     g.message = 'ONDA '..g.wave
     g.messageTimer = 1.3
@@ -171,16 +173,15 @@ function Game.update(g, dt, input)
             e.hitFlash=math.max(0,e.hitFlash-dt)
             e.attackVisual=math.max(0,(e.attackVisual or 0)-dt)
             e.cooldown=math.max(0,e.cooldown-dt)
-            local dx,dy=p.x-e.x,p.y-e.y
-            local d=distance(dx,dy)
-            if d>0 then e.faceX,e.faceY=dx/d,dy/d end
+            local vx,vy,d=collision.steer(e,p,g.enemies)
+            if d>0 then
+                e.faceX,e.faceY=(p.x-e.x)/d,(p.y-e.y)/d
+            end
             e.walking=d>e.attackRange
-            if d > e.attackRange then
+            if d>e.attackRange then
                 local delta=math.min(e.speed*dt,d-e.attackRange)
-                if d>0 then
-                    e.x=clamp(e.x+dx/d*delta,e.radius+12,g.width-e.radius-12)
-                    e.y=clamp(e.y+dy/d*delta,e.radius+45,g.height-e.radius-12)
-                end
+                e.x=clamp(e.x+vx*delta,e.radius+12,g.width-e.radius-12)
+                e.y=clamp(e.y+vy*delta,e.radius+45,g.height-e.radius-12)
             elseif e.cooldown<=0 then
                 e.cooldown=1.2
                 e.attackVisual=0.24
@@ -197,6 +198,7 @@ function Game.update(g, dt, input)
             end
         end
     end
+    collision.solve(g)
 end
 
 return Game
