@@ -131,6 +131,8 @@ function Game.attack(g)
             g.messageTimer=1.5
         end
     end
+    -- Knockback must also respect actor circles and arena limits immediately.
+    collision.solve(g)
     return true,hits
 end
 
