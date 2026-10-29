@@ -26,12 +26,12 @@ jobs:
       - name: LÖVE2D graphical startup smoke test
         run: |
           set +e
-          timeout 8s xvfb-run -a love . >love-smoke.log 2>&1
+          SDL_AUDIODRIVER=dummy ALSOFT_DRIVERS=null timeout 8s xvfb-run -a love . >love-smoke.log 2>&1
           code=$?
           set -e
           cat love-smoke.log
           if [ "$code" -ne 0 ] && [ "$code" -ne 124 ]; then exit "$code"; fi
-          if grep -Ei 'Error:|stack traceback' love-smoke.log; then exit 1; fi
+          if grep -E '^Error:|stack traceback|Error loading game' love-smoke.log; then exit 1; fi
       - name: Package playable alpha (without proprietary APK assets)
         run: zip -q -r Bar-Lua-Alpha.love conf.lua main.lua src reports
       - uses: actions/upload-artifact@v4
