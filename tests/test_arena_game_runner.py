@@ -12,8 +12,10 @@ class ArenaGameplayTests(unittest.TestCase):
         self.assertIn('local arenaGame = require("src.arena_game")',main)
         self.assertIn('local arenaView = require("src.arena_view")',main)
         self.assertIn('gameplayActive = true',main)
-        self.assertIn('arenaState = arenaGame.new()',main)
+        self.assertIn('arenaState = arenaGame.new(originalArt.bounds(arenaVisuals))',main)
+        self.assertIn('arenaVisuals = originalArt.prepare(maps,animations,atlases)',main)
         self.assertIn('arenaView.draw(arenaState',main)
+        self.assertIn('originalArt.drawHero', (ROOT/"src/arena_view.lua").read_text(encoding="utf8"))
         self.assertIn('key == "space" or key == "j"',main)
     def test_arena_logic_lua(self):
         exe=next((shutil.which(x) for x in ("lua5.4","lua","luajit","texlua","luatex") if shutil.which(x)),None)
@@ -22,10 +24,16 @@ class ArenaGameplayTests(unittest.TestCase):
         result=subprocess.run(cmd,cwd=ROOT,capture_output=True,text=True,timeout=25)
         self.assertEqual(result.returncode,0,result.stdout+result.stderr)
         self.assertIn("ARENA GAMEPLAY LUA OK",result.stdout)
+    def test_original_art_module_lua(self):
+        exe=next((shutil.which(x) for x in ("lua5.4","lua","luajit","texlua") if shutil.which(x)),None)
+        if not exe:self.skipTest("Lua interpreter unavailable")
+        result=subprocess.run([exe,"tests/test_arena_original_art.lua"],cwd=ROOT,capture_output=True,text=True,timeout=25)
+        self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+        self.assertIn("ORIGINAL ARENA ART LUA OK",result.stdout)
     def test_syntax_of_love_modules(self):
         exe=next((shutil.which(x) for x in ("lua5.4","lua","luajit","texlua") if shutil.which(x)),None)
         if not exe:self.skipTest("Lua interpreter unavailable")
-        for target in ("main.lua","src/arena_game.lua","src/arena_view.lua"):
+        for target in ("main.lua","src/arena_game.lua","src/arena_view.lua","src/arena_original_art.lua"):
             code="assert(loadfile("+repr(target)+"))"
             result=subprocess.run([exe,"-e",code],cwd=ROOT,capture_output=True,text=True,timeout=15)
             self.assertEqual(result.returncode,0,target+"\n"+result.stderr)
