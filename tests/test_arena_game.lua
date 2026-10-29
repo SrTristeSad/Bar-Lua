@@ -63,4 +63,24 @@ assert(s.phase=='playing')
 G.update(s,0.05,{right=true})
 assert(s.player.x>px and s.player.cooldown<before)
 assert(G.new().player.hp==300)
+-- Mouse aiming changes attack orientation without moving.
+s=G.new()
+assert(G.aimAt(s,s.player.x,s.player.y-150))
+assert(math.abs(s.player.faceX)<1e-9 and s.player.faceY<0)
+assert(not G.aimAt(s,s.player.x,s.player.y))
+local target=s.enemies[1]
+target.x=s.player.x
+target.y=s.player.y-45
+target.hp=30
+for i=2,#s.enemies do s.enemies[i].x=45;s.enemies[i].y=45 end
+local valid,hits=G.attack(s)
+assert(valid and hits==1 and not target.alive)
+assert(s.enemies[2].skin==2)
+-- Opponents expose a short attack animation after striking.
+s=G.new()
+target=s.enemies[1]
+target.x=s.player.x+15;target.y=s.player.y
+target.cooldown=0
+G.update(s,0.02,{})
+assert(target.attackVisual>0)
 print('ARENA GAMEPLAY LUA OK')
