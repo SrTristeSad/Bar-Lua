@@ -37,10 +37,17 @@ class ArenaGameplayTests(unittest.TestCase):
         result=subprocess.run([exe,"tests/test_arena_original_art.lua"],cwd=ROOT,capture_output=True,text=True,timeout=25)
         self.assertEqual(result.returncode,0,result.stdout+result.stderr)
         self.assertIn("ORIGINAL ARENA ART LUA OK",result.stdout)
+    def test_love_affine_transform(self):
+        exe=next((shutil.which(x) for x in ("lua5.4","lua","luajit","texlua") if shutil.which(x)),None)
+        if not exe:self.skipTest("Lua interpreter unavailable")
+        result=subprocess.run([exe,"tests/test_love_affine.lua"],cwd=ROOT,
+                              capture_output=True,text=True,timeout=25)
+        self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+        self.assertIn("LOVE AFFINE LUA OK",result.stdout)
     def test_syntax_of_love_modules(self):
         exe=next((shutil.which(x) for x in ("lua5.4","lua","luajit","texlua") if shutil.which(x)),None)
         if not exe:self.skipTest("Lua interpreter unavailable")
-        for target in ("main.lua","src/arena_game.lua","src/arena_view.lua","src/arena_original_art.lua","src/arena_enemy_catalog.lua"):
+        for target in ("main.lua","src/arena_game.lua","src/arena_view.lua","src/arena_original_art.lua","src/arena_enemy_catalog.lua","src/love_affine.lua","src/playtest.lua"):
             code="assert(loadfile("+repr(target)+"))"
             result=subprocess.run([exe,"-e",code],cwd=ROOT,capture_output=True,text=True,timeout=15)
             self.assertEqual(result.returncode,0,target+"\n"+result.stderr)
