@@ -3,6 +3,7 @@
 -- Timing, orientation mapping and all combat rules remain provisional.
 local resolver = require('src.sprite_resolver')
 local pose = require('src.pose')
+local affine = require('src.love_affine')
 local geometry = require('src.sprite_geometry')
 local enemyCatalog = require('src.arena_enemy_catalog')
 local Art = {}
@@ -208,9 +209,7 @@ function Art.drawHero(art,p,elapsed,attacking,enemy)
                     love.graphics.push()
                     love.graphics.scale(1,-1)
                     local mat=node.matrix
-                    local transform=love.math.newTransform()
-                    transform:setMatrix(mat.a,mat.b,mat.c,mat.d,mat.tx,mat.ty)
-                    love.graphics.applyTransform(transform)
+                    affine.apply(mat)
                     love.graphics.setColor(1,1,1,1)
                     geometry.draw(img,q,f)
                     love.graphics.pop()
