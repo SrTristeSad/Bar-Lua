@@ -4,6 +4,7 @@
 -- recuperados da versão nativa; nunca usá-los como mecânica canônica.
 local codec = require('src.movement_codec')
 local pose = require('src.pose')
+local affine = require('src.love_affine')
 local resolver = require('src.sprite_resolver')
 local geometry = require('src.sprite_geometry')
 local mapObjects = require('src.map_objects')
@@ -214,9 +215,7 @@ function M.draw(panel, camera, context)
                     love.graphics.translate(x,y)
                     love.graphics.scale(camera.scale,-camera.scale)
                     local m=node.matrix
-                    local t=love.math.newTransform()
-                    t:setMatrix(m.a,m.b,m.c,m.d,m.tx,m.ty)
-                    love.graphics.applyTransform(t)
+                    affine.apply(m)
                     love.graphics.setColor(1,1,1)
                     geometry.draw(image,quad,sprite.frame)
                     love.graphics.pop()
