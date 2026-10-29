@@ -130,7 +130,7 @@ local function hud(g)
     label(string.format('ABATES %d',g.kills),490,H-42,regular)
     local cooldown=p.cooldown>0 and string.format('ATAQUE %.1fs',p.cooldown) or 'ATAQUE PRONTO'
     label(cooldown,760,H-42,regular,p.cooldown>0 and 1 or 0.62,p.cooldown>0 and 0.73 or 1,0.60)
-    label('WASD / SETAS  mover     ESPAÇO / J / CLIQUE  atacar',25,H-66,small,0.77,0.9,0.95)
+    label('WASD / SETAS mover   ESPAÇO (segurar) / J / CLIQUE mirar e atacar',25,H-66,small,0.77,0.9,0.95)
     label('P pausa    R reinicia    ESC laboratório',960,H-66,small,0.77,0.9,0.95)
 end
 local function overlay(g)
@@ -183,7 +183,7 @@ function View.draw(g,w,h,original)
             local drawn=original and originalArt.drawHero(original,g.player,g.elapsed,g.player.cooldown>0,false)
             if not drawn then playerSprite(g) end
         else
-            local drawn=original and originalArt.drawHero(original,a.enemy,g.elapsed,false,true)
+            local drawn=original and originalArt.drawHero(original,a.enemy,g.elapsed,(a.enemy.attackVisual or 0)>0,true)
             if not drawn then
                 enemySprite(a.enemy)
             else
@@ -199,7 +199,7 @@ function View.draw(g,w,h,original)
     hud(g)
     overlay(g)
     local message=original and original.usesOriginalMap and original.usesOriginalHero and
-        'MAPA + PERSONAGEM DO APK | combate alfa ainda provisório' or
+        ('ARTE DO APK: mapa e heroi | visuais de inimigos: '..tostring(#(original.enemyAssets or {}))..' candidatos | mecanicas alfa') or
         'ALFA: instale cache e assets_original para usar arte BarbarQ | combate provisório'
     label(message,22,56,small,1,0.72,0.45)
     love.graphics.pop()
