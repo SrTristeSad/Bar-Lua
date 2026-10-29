@@ -4,9 +4,11 @@ on:
     paths:
       - 'src/arena_game.lua'
       - 'src/arena_view.lua'
+      - 'src/arena_original_art.lua'
       - 'main.lua'
       - 'conf.lua'
       - 'tests/test_arena_game.lua'
+      - 'tests/test_arena_original_art.lua'
       - 'tests/test_arena_game_runner.py'
       - '.github/workflows/arena-lua.yml'
   workflow_dispatch:
