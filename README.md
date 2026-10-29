@@ -36,6 +36,24 @@ O `.love` anexado às execuções do GitHub Actions executa a **arena sem
 recursos proprietários**. Para utilizar os mapas e a animação originais,
 execute `love .` na pasta completa com `assets_original/` e `cache/`.
 
+**Personagens adversários (alfa):** `src/arena_enemy_catalog.lua` busca modelos
+compatíveis entre as animações recuperadas sob `character/`, exigindo
+`stand_0`, `walk_0` e ao menos um sprite resolvível no atlas. Os
+candidatos são ordenados e distribuídos entre os inimigos da partida.
+**Isso não significa que o modelo seja um inimigo na versão original:**
+é apenas uma seleção visual provisória. Se nenhum arquivo for adequado,
+a arena mantém os adversários desenhados proceduralmente, sem travar.
+
+**Controle atualizado:** mantenha `Espaço` pressionado para repetir o ataque
+conforme a recarga; o clique esquerdo mira em direção ao cursor antes de
+atacar. As animações de ataque dos adversários são reproduzidas quando
+existentes, sem alegar timing nativo.
+
+A integração gráfica é validada no LÖVE2D usando atlas PNG, TMX e
+bExport sintéticos, gerados por `tests/create_arena_visual_fixture.py`.
+Esse teste verifica a cadeia completa de renderização sem redistribuir
+os recursos do APK.
+
 **Fidelidade:** é uma versão `ALFA` de jogabilidade, não uma reprodução 1:1.
 A seleção de direção, a taxa das animações, inimigos, velocidade, alcance,
 recarga, dano, HP e duração das ondas são parâmetros provisórios. O valor
