@@ -26,7 +26,7 @@ function Game.spawnWave(g)
             speed=64 + g.wave*10,
             damage=10 + g.wave*3,
             attackRange=39, cooldown=(i-1)*0.22,
-            hitFlash=0, alive=true
+            hitFlash=0, attackVisual=0, skin=i, alive=true
         }
     end
     g.phase = 'playing'
@@ -74,6 +74,16 @@ local function countAlive(g)
 end
 function Game.aliveEnemies(g)
     return countAlive(g)
+end
+
+function Game.aimAt(g,x,y)
+    if not g or g.phase~='playing' or type(x)~='number' or type(y)~='number' then return false end
+    local p=g.player
+    local dx,dy=x-p.x,y-p.y
+    local d=distance(dx,dy)
+    if d<0.001 or d~=d then return false end
+    p.faceX,p.faceY=dx/d,dy/d
+    return true
 end
 
 function Game.attack(g)
@@ -159,6 +169,7 @@ function Game.update(g, dt, input)
     for _,e in ipairs(g.enemies) do
         if e.alive then
             e.hitFlash=math.max(0,e.hitFlash-dt)
+            e.attackVisual=math.max(0,(e.attackVisual or 0)-dt)
             e.cooldown=math.max(0,e.cooldown-dt)
             local dx,dy=p.x-e.x,p.y-e.y
             local d=distance(dx,dy)
@@ -172,6 +183,7 @@ function Game.update(g, dt, input)
                 end
             elseif e.cooldown<=0 then
                 e.cooldown=1.2
+                e.attackVisual=0.24
                 if p.invulnerable<=0 then
                     p.hp=math.max(0,p.hp-e.damage)
                     p.invulnerable=0.45
