@@ -57,19 +57,32 @@ layers={{runs={{1,280}}}}}}
         atlas("character/babarian/sprites.bplist","character/babarian/sprites.png","player0")+","+
         atlas("character/smoke_enemy/sprites.bplist","character/smoke_enemy/sprites.png","enemy0")+"}\n",encoding="utf8")
     (STAGE/"main.lua").write_text("""
+io.stdout:setvbuf('no')
+print('ARENA FIXTURE START')
 local Art=require('src.arena_original_art')
 local Game=require('src.arena_game')
 local View=require('src.arena_view')
 local art,game
+local elapsed=0
 function love.load()
+    print('ARENA FIXTURE LOAD')
     art=Art.prepare(dofile('cache/maps.lua'),dofile('cache/animations.lua'),
                     dofile('cache/atlases.lua'))
     assert(#art.enemyAssets==1,'candidate enemy asset was not detected')
     game=Game.new(Art.bounds(art))
     game.player.cooldown=0.25
     game.enemies[1].attackVisual=0.12
+    print('ARENA FIXTURE LOADED')
+end
+function love.update(dt)
+    elapsed=elapsed+dt
+    if elapsed>4 then
+        print('ARENA VISUAL DID NOT DRAW')
+        os.exit(3)
+    end
 end
 function love.draw()
+    print('ARENA FIXTURE DRAW')
     View.draw(game,1280,720,art)
     assert(art.usesOriginalMap,'TMX failed to render')
     assert(art.usesOriginalHero,'barbarian animation failed to render')
