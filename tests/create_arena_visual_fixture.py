@@ -66,8 +66,12 @@ local art,game
 local elapsed=0
 function love.load()
     print('ARENA FIXTURE LOAD')
-    art=Art.prepare(dofile('cache/maps.lua'),dofile('cache/animations.lua'),
-                    dofile('cache/atlases.lua'))
+    local function fromGame(path)
+        local chunk=assert(love.filesystem.load(path))
+        return chunk()
+    end
+    art=Art.prepare(fromGame('cache/maps.lua'),fromGame('cache/animations.lua'),
+                    fromGame('cache/atlases.lua'))
     assert(#art.enemyAssets==1,'candidate enemy asset was not detected')
     game=Game.new(Art.bounds(art))
     game.player.cooldown=0.25
