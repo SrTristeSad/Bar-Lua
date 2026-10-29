@@ -20,6 +20,21 @@ jobs:
       - name: Install Lua
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y lua5.4
+          sudo apt-get install -y lua5.4 love xvfb zip
       - name: Pure Lua gameplay tests and syntax
         run: python3 -m unittest discover -s tests -p 'test_arena_game_runner.py' -v
+      - name: LÖVE2D graphical startup smoke test
+        run: |
+          set +e
+          timeout 8s xvfb-run -a love . >love-smoke.log 2>&1
+          code=$?
+          set -e
+          cat love-smoke.log
+          if [ "$code" -ne 0 ] && [ "$code" -ne 124 ]; then exit "$code"; fi
+          if grep -Ei 'Error:|stack traceback' love-smoke.log; then exit 1; fi
+      - name: Package playable alpha (without proprietary APK assets)
+        run: zip -q -r Bar-Lua-Alpha.love conf.lua main.lua src reports
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Bar-Lua-Alpha-Love
+          path: Bar-Lua-Alpha.love
