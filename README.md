@@ -36,6 +36,20 @@ O `.love` anexado às execuções do GitHub Actions executa a **arena sem
 recursos proprietários**. Para utilizar os mapas e a animação originais,
 execute `love .` na pasta completa com `assets_original/` e `cache/`.
 
+**Movimento e colisões da arena:** `src/arena_collision.lua` implementa
+separação de círculos entre jogador e adversários, separação entre
+adversários, manutenção dos limites do mapa e desvio local durante
+perseguição. As verificações incluem atores sobrepostos no mesmo ponto,
+encurralamento próximo aos limites do mapa, corpos derrotados ignorados
+pela colisão e vários inimigos seguindo o jogador simultaneamente.
+O módulo é Lua puro, sem dependência de Box2D, e é executado
+por `src/arena_game.lua`.
+
+**Limitação de fidelidade:** os círculos, as margens e as decisões de IA
+são parâmetros temporários da arena alfa, não colisores ou comportamento
+confirmados do BarbarQ original. As colisões de objetos TMX não são
+ativadas automaticamente sem comprovar sua função no jogo original.
+
 **Personagens adversários (alfa):** `src/arena_enemy_catalog.lua` busca modelos
 compatíveis entre as animações recuperadas sob `character/`, exigindo
 `stand_0`, `walk_0` e ao menos um sprite resolvível no atlas. Os
