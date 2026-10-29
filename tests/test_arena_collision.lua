@@ -58,6 +58,14 @@ for i,en in ipairs(g.enemies) do
         assert(gap(en,g.enemies[j])>-0.07,'AI actors overlap after chasing')
     end
 end
+-- An attack knockback must resolve overlap immediately, without waiting for update().
+g=G.new()
+local e1,e2=g.enemies[1],g.enemies[2]
+e1.x,e1.y=g.player.x+85,g.player.y
+e2.x,e2.y=g.player.x+116,g.player.y
+g.enemies[3].x,g.enemies[3].y=45,45
+assert(G.attack(g))
+assert(gap(e1,e2)>-0.07,'attack knockback caused overlapping enemies')
 -- Collision system does not change the combat state's win/loss conditions.
 g=G.new()
 g.player.hp=1
