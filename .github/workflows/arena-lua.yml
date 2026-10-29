@@ -38,8 +38,13 @@ jobs:
       - name: Render real map and actor pipeline in LÖVE
         run: |
           python3 tests/create_arena_visual_fixture.py
+          (cd /tmp/bar-lua-visual-smoke && lua5.4 -e "assert(loadfile('main.lua')); assert(loadfile('cache/animations.lua')); assert(loadfile('cache/maps.lua')); assert(loadfile('cache/atlases.lua'))")
+          set +e
           SDL_AUDIODRIVER=dummy ALSOFT_DRIVERS=null timeout 15s xvfb-run -a love /tmp/bar-lua-visual-smoke >visual-smoke.log 2>&1
+          code=$?
+          set -e
           cat visual-smoke.log
+          if [ "$code" -ne 0 ]; then exit "$code"; fi
           grep -F 'ARENA VISUAL SMOKE OK' visual-smoke.log
       - name: Package playable alpha (without proprietary APK assets)
         run: zip -q -r Bar-Lua-Alpha.love conf.lua main.lua src reports
