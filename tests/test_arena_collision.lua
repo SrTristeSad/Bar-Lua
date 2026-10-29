@@ -62,7 +62,7 @@ end
 g=G.new()
 g.player.hp=1
 a=g.enemies[1]
-a.x,a.y=g.player.x+40,g.player.y
+a.x,a.y=g.player.x+30,g.player.y
 a.cooldown=0
 G.update(g,0.02,{})
 assert(g.phase=='lost' and g.player.hp==0)
