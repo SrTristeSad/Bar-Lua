@@ -34,14 +34,16 @@ function Game.spawnWave(g)
     g.messageTimer = 1.3
 end
 
-function Game.new()
+function Game.new(worldWidth,worldHeight)
+    local width=type(worldWidth)=='number' and worldWidth>=500 and worldWidth<=20000 and worldWidth or 1280
+    local height=type(worldHeight)=='number' and worldHeight>=450 and worldHeight<=20000 and worldHeight or 720
     local g = {
-        width=1280, height=720, wave=1, maxWaves=3,
+        width=width, height=height, wave=1, maxWaves=3,
         score=0, kills=0, elapsed=0, phase='playing',
         enemies={}, effects={}, message='', messageTimer=0,
         attackFlash=0, hitCount=0, nextWaveTimer=0,
         player={
-            x=640, y=360, radius=18,
+            x=width/2, y=height/2, radius=18,
             maxHp=300, hp=300,
             speed=220, damage=59,
             attackRange=94, attackCooldown=0.42,
@@ -147,6 +149,7 @@ function Game.update(g, dt, input)
     local mx=(input.right and 1 or 0)-(input.left and 1 or 0)
     local my=(input.down and 1 or 0)-(input.up and 1 or 0)
     local m=distance(mx,my)
+    p.walking=m>0
     if m>0 then
         mx,my=mx/m,my/m
         p.faceX,p.faceY=mx,my
@@ -159,6 +162,8 @@ function Game.update(g, dt, input)
             e.cooldown=math.max(0,e.cooldown-dt)
             local dx,dy=p.x-e.x,p.y-e.y
             local d=distance(dx,dy)
+            if d>0 then e.faceX,e.faceY=dx/d,dy/d end
+            e.walking=d>e.attackRange
             if d > e.attackRange then
                 local delta=math.min(e.speed*dt,d-e.attackRange)
                 if d>0 then
