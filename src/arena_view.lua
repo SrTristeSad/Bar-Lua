@@ -1,6 +1,7 @@
 -- Bar-Lua playable arena: stand-in 2D art, no external game assets required.
 -- Combat rules live in src/arena_game.lua. Original BarbarQ visuals pending.
 local View={}
+local originalArt=require('src.arena_original_art')
 local regular, large, small
 local W,H=1280,720
 local function fonts()
@@ -153,7 +154,7 @@ local function overlay(g)
     centered(text,285,large,1,0.86,0.41)
     if subtitle then centered(subtitle,354,regular,0.89,0.95,0.96) end
 end
-function View.draw(g,w,h)
+function View.draw(g,w,h,original)
     if not g then return end
     fonts()
     w=w or love.graphics.getWidth()
@@ -166,6 +167,11 @@ function View.draw(g,w,h)
     love.graphics.translate(left,top)
     love.graphics.scale(scale,scale)
     floor()
+    local camera=original and originalArt.camera(original,g.player) or {scale=1,x=0,y=0}
+    love.graphics.push()
+    love.graphics.translate(camera.x,camera.y)
+    love.graphics.scale(camera.scale,camera.scale)
+    if original and original.map then originalArt.drawMap(original,g.player) end
     local actors={}
     for _,e in ipairs(g.enemies) do
         if e.alive then actors[#actors+1]={y=e.y,enemy=e} end
@@ -173,16 +179,29 @@ function View.draw(g,w,h)
     actors[#actors+1]={y=g.player.y,player=true}
     table.sort(actors,function(a,b)return a.y<b.y end)
     for _,a in ipairs(actors) do
-        if a.player then playerSprite(g) else enemySprite(a.enemy) end
+        if a.player then
+            local drawn=original and originalArt.drawHero(original,g.player,g.elapsed,g.player.cooldown>0,false)
+            if not drawn then playerSprite(g) end
+        else
+            local drawn=original and originalArt.drawHero(original,a.enemy,g.elapsed,false,true)
+            if not drawn then
+                enemySprite(a.enemy)
+            else
+                hpbar(a.enemy.x-24,a.enemy.y-45,48,a.enemy.hp,a.enemy.maxHp,true)
+            end
+        end
     end
     for _,effect in ipairs(g.effects) do
         label(effect.text,effect.x-16,effect.y-effect.age*34,regular,
               effect.color[1],effect.color[2],effect.color[3])
     end
+    love.graphics.pop()
     hud(g)
     overlay(g)
-    label('PROTOTIPO: regras e personagens de teste, nao comprovados 1:1',22,56,
-          small,1,0.72,0.45)
+    local message=original and original.usesOriginalMap and original.usesOriginalHero and
+        'MAPA + PERSONAGEM DO APK | combate alfa ainda provisório' or
+        'ALFA: instale cache e assets_original para usar arte BarbarQ | combate provisório'
+    label(message,22,56,small,1,0.72,0.45)
     love.graphics.pop()
     color(1,1,1)
 end
