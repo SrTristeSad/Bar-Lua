@@ -14,6 +14,7 @@ local filterView = require("src.filter_view")
 local playtest = require("src.playtest")
 local arenaGame = require("src.arena_game")
 local arenaView = require("src.arena_view")
+local originalArt = require("src.arena_original_art")
 local skillView = require("src.skill_view")
 local combatView = require("src.combat_view")
 local damageMathView = require("src.damage_math_view")
@@ -62,6 +63,10 @@ local imageIndex = {}
 local textures, quads = {}, {}
 local position = {x = 0, y = 0}
 local arenaState, gameplayActive = nil, true
+local arenaVisuals = nil
+local function restartArena()
+    arenaState = arenaGame.new(originalArt.bounds(arenaVisuals))
+end
 local frameIndex = 1
 local atlasClick = nil
 local font, small, titlefont
@@ -484,7 +489,8 @@ function love.load()
         local map = activeMap()
         if map then position.x = map.width * map.tilewidth / 2; position.y = map.height * map.tileheight / 2 end
     end
-    arenaState = arenaGame.new()
+    arenaVisuals = originalArt.prepare(maps,animations,atlases)
+    restartArena()
 end
 
 function love.update(dt)
@@ -514,7 +520,8 @@ end
 
 function love.draw()
     if gameplayActive then
-        arenaView.draw(arenaState, love.graphics.getDimensions())
+        local aw,ah=love.graphics.getDimensions()
+        arenaView.draw(arenaState, aw,ah,arenaVisuals)
         return
     end
     local w, h = love.graphics.getDimensions()
@@ -609,13 +616,13 @@ function love.keypressed(key)
     if gameplayActive then
         if key == "escape" then gameplayActive = false
         elseif key == "space" or key == "j" then arenaGame.attack(arenaState)
-        elseif key == "r" then arenaState = arenaGame.new()
+        elseif key == "r" then restartArena()
         elseif key == "p" then arenaGame.togglePause(arenaState)
         end
         return
     end
     if (key == "return" or key == "kpenter") and love.keyboard.isDown("lctrl","rctrl") then
-        arenaState = arenaGame.new()
+        restartArena()
         gameplayActive = true
         return
     end
