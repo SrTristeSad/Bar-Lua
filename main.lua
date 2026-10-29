@@ -1,5 +1,5 @@
--- Bar-Lua | laboratório de engenharia reversa do BarbarQ 1.0.1811.
--- NÃO é o jogo: visualização técnica, prévias experimentais e análise de dados originais.
+-- Bar-Lua: prototipo de arena jogavel + laboratorio de engenharia reversa.
+-- O modo jogavel ainda usa mecanicas e visuais temporarios, nao e port 1:1.
 local modes = {"Mapas TMX", "Imagens", "Atlas .plist/.bplist", "Configurações", "Animações", "Cenas .csb", "ELF ARM64", "Fluxo ARM64", "Movimento ARM64", "Entity / Box2D", "Contatos ARM64", "Colisores ARM64", "Filtros Box2D", "Teste de movimento", "Habilidades (dados)", "Combate ARM64", "Núcleo de dano ARM64", "HP / Vida ARM64", "Morte / Score ARM64", "Renascimento ARM64", "ReInit ARM64", "Atributos por nível", "Escopo de setor (AABB)", "Filtro de alvos (ARM64)", "Condicoes ARM64", "Predicados ARM64", "Comparacoes ARM64", "Portas de skill ARM64", "Esquema de habilidade", "Listas xconf de habilidade", "Funções CSelfSkill ARM64"}
 local tabLabels = {"Mapa", "Img", "Atlas", "Cfg", "Anim", "CSB", "ELF", "Fluxo", "Mov", "Ent", "Cont", "Colis", "Filtro", "Teste", "Skill", "Comb", "Dano", "Vida", "Morte", "Renas", "ReInit", "Níveis", "Escopo", "Alvos", "Cond", "Pred", "Comp", "Gate", "SkillCfg", "Listas", "SelfFn"}
 local animationView = require("src.animation_view")
@@ -12,6 +12,8 @@ local contactView = require("src.contact_view")
 local colliderView = require("src.collider_view")
 local filterView = require("src.filter_view")
 local playtest = require("src.playtest")
+local arenaGame = require("src.arena_game")
+local arenaView = require("src.arena_view")
 local skillView = require("src.skill_view")
 local combatView = require("src.combat_view")
 local damageMathView = require("src.damage_math_view")
@@ -59,6 +61,7 @@ local selfSkillFlowReport = {}
 local imageIndex = {}
 local textures, quads = {}, {}
 local position = {x = 0, y = 0}
+local arenaState, gameplayActive = nil, true
 local frameIndex = 1
 local atlasClick = nil
 local font, small, titlefont
@@ -481,9 +484,18 @@ function love.load()
         local map = activeMap()
         if map then position.x = map.width * map.tilewidth / 2; position.y = map.height * map.tileheight / 2 end
     end
+    arenaState = arenaGame.new()
 end
 
 function love.update(dt)
+    if gameplayActive then
+        local kb = love.keyboard
+        arenaGame.update(arenaState, dt, {
+            up=kb.isDown("w","up"), down=kb.isDown("s","down"),
+            left=kb.isDown("a","left"), right=kb.isDown("d","right")
+        })
+        return
+    end
     if mode == 14 then
         playtest.update(dt, function(key) return love.keyboard.isDown(key) end)
         local px,py = playtest.playerPosition()
@@ -501,6 +513,10 @@ function love.update(dt)
 end
 
 function love.draw()
+    if gameplayActive then
+        arenaView.draw(arenaState, love.graphics.getDimensions())
+        return
+    end
     local w, h = love.graphics.getDimensions()
     local list = visibleList()
     drawShell(w, h, list)
@@ -590,6 +606,19 @@ function love.draw()
 end
 
 function love.keypressed(key)
+    if gameplayActive then
+        if key == "escape" then gameplayActive = false
+        elseif key == "space" or key == "j" then arenaGame.attack(arenaState)
+        elseif key == "r" then arenaState = arenaGame.new()
+        elseif key == "p" then arenaGame.togglePause(arenaState)
+        end
+        return
+    end
+    if (key == "return" or key == "kpenter") and love.keyboard.isDown("lctrl","rctrl") then
+        arenaState = arenaGame.new()
+        gameplayActive = true
+        return
+    end
     if key == 'p' and love.keyboard.isDown('lctrl','rctrl') then setMode(14); return end
     if key == 'h' and love.keyboard.isDown('lctrl','rctrl') then setMode(15); return end
     if key == 'd' and love.keyboard.isDown('lctrl','rctrl') then setMode(16); return end
@@ -695,6 +724,7 @@ function love.keypressed(key)
 end
 
 function love.textinput(text)
+    if gameplayActive then return end
     -- WASD no mapa é controle da câmera, não texto de busca.
     if mode == 3 and (text == "[" or text == "]") then return end
     if mode == 5 and (text:lower() == "i" or text:lower() == "b" or text:lower() == "p") then return end
@@ -704,10 +734,15 @@ function love.textinput(text)
 end
 
 function love.wheelmoved(_, dy)
+    if gameplayActive then return end
     if dy ~= 0 then zoom = math.max(0.12, math.min(8, zoom * (dy > 0 and 1.18 or 1 / 1.18))) end
 end
 
 function love.mousepressed(x, y, button)
+    if gameplayActive then
+        if button == 1 then arenaGame.attack(arenaState) end
+        return
+    end
     if button ~= 1 then return end
     -- Todas as abas são acessíveis por clique no cabeçalho, inclusive F13.
     if y >= 49 and y < 80 and x >= 14 then
