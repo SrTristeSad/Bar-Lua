@@ -500,6 +500,7 @@ function love.update(dt)
             up=kb.isDown("w","up"), down=kb.isDown("s","down"),
             left=kb.isDown("a","left"), right=kb.isDown("d","right")
         })
+        if kb.isDown('space') then arenaGame.attack(arenaState) end
         return
     end
     if mode == 14 then
@@ -747,7 +748,20 @@ end
 
 function love.mousepressed(x, y, button)
     if gameplayActive then
-        if button == 1 then arenaGame.attack(arenaState) end
+        if button == 1 and arenaState then
+            local ww,wh=love.graphics.getDimensions()
+            local fit=math.min(ww/1280,wh/720)
+            if fit>0 then
+                local sx=(x-(ww-1280*fit)/2)/fit
+                local sy=(y-(wh-720*fit)/2)/fit
+                if sx>=0 and sx<=1280 and sy>=0 and sy<=720 then
+                    local camera=originalArt.camera(arenaVisuals,arenaState.player)
+                    arenaGame.aimAt(arenaState,(sx-camera.x)/camera.scale,
+                                           (sy-camera.y)/camera.scale)
+                    arenaGame.attack(arenaState)
+                end
+            end
+        end
         return
     end
     if button ~= 1 then return end
