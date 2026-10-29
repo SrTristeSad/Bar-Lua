@@ -16,13 +16,33 @@ pontuação, três ondas e vitória/derrota. O motor de regras é Lua independen
 do desenho (`src/arena_game.lua`); a camada LÖVE2D está em
 `src/arena_view.lua`. Isso permite testar combate e substituir gráficos depois.
 
+**Integração de recursos originais:** o arquivo `src/arena_original_art.lua`
+carrega o mapa `petisland_01` do catálogo TMX e desenha suas camadas com as
+texturas recuperadas. O jogador usa as poses `stand_*`, `walk_*` e
+`attack1_*` do `babarian.bexportjson`, via atlas e matrizes já presentes
+no projeto. Os adversários da arena alfa reutilizam a mesma arte do bárbaro,
+**não são os inimigos originais**. Arquivos ausentes usam o visual provisório
+sem impedir que o combate continue.
+
+Para habilitar os visuais originais no projeto local, prepare os arquivos
+extraídos **do seu próprio APK**:
+
+```bash
+python tools/preparar_recursos.py --assets assets_original --out cache
+love .
+```
+
+O `.love` anexado às execuções do GitHub Actions executa a **arena sem
+recursos proprietários**. Para utilizar os mapas e a animação originais,
+execute `love .` na pasta completa com `assets_original/` e `cache/`.
+
 **Fidelidade:** é uma versão `ALFA` de jogabilidade, não uma reprodução 1:1.
-Inimigos, gráficos procedurais, velocidade, alcance, recarga, dano inimigo,
-HP e duração das ondas são parâmetros provisórios. O valor de ataque de teste
-59 coincide com um atributo observado anteriormente, mas ainda **não** é a
-fórmula original do ataque 4010020. Nada disso deve ser descrito como
-mecânica confirmada do BarbarQ. A integração com personagens, efeitos e mapas
-originais continua como tarefa de desenvolvimento.
+A seleção de direção, a taxa das animações, inimigos, velocidade, alcance,
+recarga, dano, HP e duração das ondas são parâmetros provisórios. O valor
+de ataque de teste 59 coincide com um atributo observado anteriormente,
+mas ainda **não** é a fórmula original da habilidade 4010020. O mapa e
+as animações são de recursos reais; sua integração ainda exige comparação
+visual no Windows e validação do timing nativo.
 
 Testar a lógica separadamente, sem LÖVE2D:
 
