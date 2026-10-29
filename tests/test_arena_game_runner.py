@@ -24,6 +24,13 @@ class ArenaGameplayTests(unittest.TestCase):
         result=subprocess.run(cmd,cwd=ROOT,capture_output=True,text=True,timeout=25)
         self.assertEqual(result.returncode,0,result.stdout+result.stderr)
         self.assertIn("ARENA GAMEPLAY LUA OK",result.stdout)
+    def test_actor_collision_and_ai(self):
+        exe=next((shutil.which(x) for x in ("lua5.4","lua","luajit","texlua") if shutil.which(x)),None)
+        if not exe:self.skipTest("Lua interpreter unavailable")
+        result=subprocess.run([exe,"tests/test_arena_collision.lua"],cwd=ROOT,
+                              capture_output=True,text=True,timeout=30)
+        self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+        self.assertIn("ARENA COLLISION AND AI LUA OK",result.stdout)
     def test_enemy_catalog_lua(self):
         exe=next((shutil.which(x) for x in ("lua5.4","lua","luajit","texlua") if shutil.which(x)),None)
         if not exe:self.skipTest("Lua interpreter unavailable")
@@ -47,7 +54,7 @@ class ArenaGameplayTests(unittest.TestCase):
     def test_syntax_of_love_modules(self):
         exe=next((shutil.which(x) for x in ("lua5.4","lua","luajit","texlua") if shutil.which(x)),None)
         if not exe:self.skipTest("Lua interpreter unavailable")
-        for target in ("main.lua","src/arena_game.lua","src/arena_view.lua","src/arena_original_art.lua","src/arena_enemy_catalog.lua","src/love_affine.lua","src/playtest.lua"):
+        for target in ("main.lua","src/arena_game.lua","src/arena_view.lua","src/arena_original_art.lua","src/arena_enemy_catalog.lua","src/arena_collision.lua","src/love_affine.lua","src/playtest.lua"):
             code="assert(loadfile("+repr(target)+"))"
             result=subprocess.run([exe,"-e",code],cwd=ROOT,capture_output=True,text=True,timeout=15)
             self.assertEqual(result.returncode,0,target+"\n"+result.stderr)
